@@ -225,7 +225,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 end
             end
 
-            local eval_struct = utils.language_eval(captions, 'attention')
+            local eval_struct = M.language_eval(captions, 'attention')
             local bleu_4 = eval_struct.Bleu_4
 
             if bleu_4 > max_bleu_4 then
