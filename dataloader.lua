@@ -19,6 +19,7 @@ function DataLoader:__init(opt)
 
     self.att_size = opt.att_size
     self.feat_size = opt.feat_size
+    self.fc7_size = opt.fc7_size
 
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
@@ -52,12 +53,13 @@ function DataLoader:__init(opt)
     print('size of train_len2captions: ' .. tablex.size(self.train_len2captions))
     print('size of val_len2captions: ' .. tablex.size(self.val_len2captions))
     
-    opt.max_seq_len = 1  
+    local max_seq_len = 1  
     for k,v in pairs(self.train_len2captions) do
         -- print(k)
-        if k > opt.max_seq_len then opt.max_seq_len = k end
+        -- if k > opt.max_seq_len then opt.max_seq_len = k end
+        max_seq_len = math.max(max_seq_len, k)
     end               
-    opt.max_seq_len = opt.max_seq_len + 3
+    opt.max_seq_len = max_seq_len + 2
     print('Max sequence length is: ' .. opt.max_seq_len)
     -- os.exit()
 end

@@ -81,9 +81,11 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
     local clones = {}
     
     -- Clone models
+    local max_t = opt.truncate > 0 and math.min(opt.max_seq_len, opt.truncate) or opt.max_seq_len
+    print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        clones[name] = model_utils.clone_many_times(proto, opt.max_seq_len)
+        clones[name] = model_utils.clone_many_times(proto, max_t)
     end
     
     -- LSTM initial state
@@ -130,6 +132,7 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
             local predictions = {}             -- softmax outputs
             local loss = 0
             local seq_len = input_text:size()[2]     -- sequence length 
+            local seq_len = math.min(seq_len, max_t) -- get truncated
             
             for t = 1, seq_len do
                 -- print('Time step ' .. t)
