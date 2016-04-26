@@ -101,7 +101,7 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
 
             local initstate_c = fc7_images:clone()
             local initstate_h = fc7_images
-            local dfinalstate_c = input_text:clone():zero()
+            local dfinalstate_c = torch.zeros(input_text:size()[1], opt.lstm_size)
             
             -- print('Start forward')
             ------------------- forward pass -------------------
@@ -139,8 +139,8 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
                 end
                 
                 -- backprop through LSTM timestep
-                print(embeddings[t]:size(), att_seq:size(), lstm_c[t - 1]:size(), lstm_h[t - 1]:size(), dlstm_c[t]:size(),
-                    dlstm_h[t]:size())
+                -- print(embeddings[t]:size(), att_seq:size(), lstm_c[t - 1]:size(), lstm_h[t - 1]:size(), dlstm_c[t]:size(),
+                    -- dlstm_h[t]:size())
                 dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
                     backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
                     {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
