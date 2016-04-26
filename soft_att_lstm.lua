@@ -173,6 +173,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
             train_loss = comp_error(batches)
             val_loss = comp_error(val_batches)
             print(epoch, i, 'train', train_loss, 'val', val_loss)
+        end
 
         if i % opt.eval_period == 0 then 
             collectgarbage()
