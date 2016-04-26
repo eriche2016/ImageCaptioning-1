@@ -222,7 +222,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                     if j == 1 and k <= 10 then
                         print(val_batches[j][k][1], caption)
                     end
-                    table.insert(captions, {image_id = val_batches[j][k][1], caption})
+                    table.insert(captions, {image_id = val_batches[j][k][1], caption = caption})
                 end
             end
 
