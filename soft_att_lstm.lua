@@ -114,6 +114,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         
         for t = 1, seq_len do
             print('Forward time step ' .. t)
+            cutorch.setDevice(t % 2 + 1)
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
             lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
                 forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
@@ -130,6 +131,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
             
             for t = seq_len, 1, -1 do
                 print('Backward time step ' .. t)
+                cutorch.setDevice(t % 2 + 1)
                 local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
                 if t == seq_len then
                     assert(dlstm_h[t] == nil)
