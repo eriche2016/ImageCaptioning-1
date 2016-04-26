@@ -76,7 +76,7 @@ end
 -- INPUT
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
-function M.train(model, epoch, opt, batches, optim_state, dataloader)
+function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloader)
     local params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
     local clones = {}
     
@@ -90,7 +90,8 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
 
     local att_seq, fc7_images, input_text, output_text
 
-    local function feval(params_)
+    local function feval(params_, update)
+        if update == nil then update = true end
         if params_ ~= params then
             params:copy(params_)
         end
@@ -149,6 +150,18 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
         return loss, grad_params
     end 
     --- end of feval
+
+    local function comp_error(batches)
+        local loss = 0; local inst_cnt = 0
+        for j = 1, #batches do
+            att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[j])
+            local t_loss, _ = feval(params, false)
+            loss = loss + t_loss
+            inst_cnt = inst_cnt + input_text:size()[1]
+            if inst_cnt >= opt.max_eval_inst then break end
+        end
+        return loss
+    end
     
     for i = 1, #batches do
         att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
@@ -156,6 +169,11 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
         print(fs[1])
         
         ----------------- Evaluate the model in validation set ----------------
+        if i % opt.loss_period == 0 then
+            train_loss = comp_error(batches)
+            val_loss = comp_error(val_batches)
+            print(epoch, i, 'train', train_loss, 'val', val_loss)
+
         if i % opt.eval_period == 0 then 
             collectgarbage()
         end

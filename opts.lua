@@ -31,9 +31,11 @@ function M.parse(arg)
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
     cmd:option('-eval_period', 100, 'Every certain period, evaluate current model')
+    cmd:option('-loss_period', 10, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-LR', 0.01, 'Initial learning rate')
     cmd:option('-truncate', 3, 'Text longer than this size gets truncated. -1 for no truncation.')
+    cmd:option('-max_eval_inst', 4000, 'max number of instances when calling comp error')
 
     local opt = cmd:parse(arg or {})
     return opt

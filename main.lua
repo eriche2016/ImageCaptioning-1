@@ -28,8 +28,9 @@ print(model.criterion)
 -- Train
 local optim_state = {learningRate = opt.LR}
 local batches = dataloader:gen_batch(dataloader.train_len2captions, opt.batch_size)
+local val_batches = dataloader:gen_batch(dataloader.val_len2captions, opt.batch_size)
 for epoch = 1, opt.nEpochs do
-    M.train(model, epoch, opt, batches, optim_state, dataloader)
+    M.train(model, epoch, opt, batches, val_batches, optim_state, dataloader)
 end
 
     
