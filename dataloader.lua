@@ -21,6 +21,8 @@ function DataLoader:__init(opt)
     self.feat_size = opt.feat_size
     self.fc7_size = opt.fc7_size
 
+    self.anno_utils = anno_utils
+
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
     self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')

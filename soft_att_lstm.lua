@@ -78,6 +78,7 @@ end
 function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloader)
     local params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
     local clones = {}
+    anno_utils = dataloader.anno_utils
     
     -- Clone models
     local max_t = opt.truncate > 0 and math.min(opt.max_seq_len, opt.truncate) or opt.max_seq_len
