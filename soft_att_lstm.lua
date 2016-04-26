@@ -77,7 +77,7 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, epoch, opt, batches, optim_state, dataloader)
-    local params, grad_params = model_utils.combine_all_parameters(model.embed, model.soft_att_lstm, model.softmax)
+    local params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
     local clones = {}
     
     -- Clone models
