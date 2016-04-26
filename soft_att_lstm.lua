@@ -197,6 +197,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
     local index = torch.randperm(#batches)
     for i = 1, #batches do
         att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
+        print(index[i], 'batch size', att_seq:size()[1])
         optim.adagrad(feval, params, optim_state)
         
         ----------------- Evaluate the model in validation set ----------------
