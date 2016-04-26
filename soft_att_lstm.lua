@@ -112,8 +112,9 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         local seq_len = input_text:size()[2]     -- sequence length 
         seq_len = math.min(seq_len, max_t) -- get truncated
         
+        print('seq_len', seq_len)
         for t = 1, seq_len do
-            print('Forward time step ' .. t)
+            -- print('Forward time step ' .. t)
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
             lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
                 forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
@@ -125,27 +126,54 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         ------------------- backward pass -------------------
         if update then
             local dembeddings = {}                                    -- d loss / d input embeddings
-            local dlstm_c = {[seq_len]=dfinalstate_c}                 -- internal cell states of LSTM
-            local dlstm_h = {}                                        -- output values of LSTM
+            local dlstm_c = dfinalstate_c                 -- internal cell states of LSTM
+            local dlstm_h = nil                                        -- output values of LSTM
+            local doutput_t
             
             for t = seq_len, 1, -1 do
-                print('Backward time step ' .. t)
-                local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
+                -- print('Backward time step ' .. t)
+                doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
                 if t == seq_len then
-                    assert(dlstm_h[t] == nil)
-                    dlstm_h[t] = clones.softmax[t]:backward(lstm_h[t], doutput_t)
+                    dlstm_h = clones.softmax[t]:backward(lstm_h[t], doutput_t)
                 else
-                    dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))     -- softmax backward
+                    dlstm_h:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))     -- softmax backward
                 end
                 
                 -- backprop through LSTM timestep
-                dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
+                doutput_t, _, dlstm_c, dlstm_h = unpack(clones.soft_att_lstm[t]:
                     backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
-                    {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
+                    {dlstm_c, dlstm_h}))                                           -- lstm backward
 
                 -- backprop through embeddings
-                clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
+                clones.emb[t]:backward(input_text:select(2, t), doutput_t)          -- emb backward
+
+                -- release forward states
+                lstm_h[t]:set()
+                lstm_c[t]:set()
             end
+
+            -- local dembeddings = {}                                    -- d loss / d input embeddings
+            -- local dlstm_c = {[seq_len]=dfinalstate_c}                 -- internal cell states of LSTM
+            -- local dlstm_h = {}                                        -- output values of LSTM
+            
+            -- for t = seq_len, 1, -1 do
+            --     -- print('Backward time step ' .. t)
+            --     local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
+            --     if t == seq_len then
+            --         assert(dlstm_h[t] == nil)
+            --         dlstm_h[t] = clones.softmax[t]:backward(lstm_h[t], doutput_t)
+            --     else
+            --         dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))     -- softmax backward
+            --     end
+                
+            --     -- backprop through LSTM timestep
+            --     dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
+            --         backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
+            --         {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
+
+            --     -- backprop through embeddings
+            --     clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
+            -- end
         end
         
         grad_params:clamp(-5, 5)
