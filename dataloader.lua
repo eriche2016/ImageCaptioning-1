@@ -98,6 +98,19 @@ function DataLoader:gen_train_data(batch)
     return images, fc7_images, input_text, output_text
 end
 
+function DataLoader:gen_test_data(j1, j2)
+    local images = torch.CudaTensor(j2 - j1 + 1, self.att_size, self.feat_size)
+    local fc7_images = torch.CudaTensor(j2 - j1 + 1, self.fc7_size)
+    for i = j1, j2 do
+        local id = self.val_set[i]
+        local file = self.id2file[id]
+        local fc7_file = self.id2fc7_file[id]
+        images[i - j1 + 1]:copy(torch.load(file):reshape(self.feat_size, self.att_size):transpose(1, 2))
+        fc7_images[i - j1 + 1]:copy(torch.load(fc7_file))
+    end
+    return images, fc7_images
+end
+
                 
 -----------------------------------------------------
 -- generate batch with same length for training

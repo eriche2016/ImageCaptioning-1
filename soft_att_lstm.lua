@@ -181,12 +181,14 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
 
         if i == 1 or i % opt.eval_period == 0 then
             local captions = {}
-            for j = 1, #val_batches do
-                att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(val_batches[j])
+            local j1 = 1
+            while j1 <= #dataloader.val_set do
+                local j2 = math.min(#dataloader.val_set, j1 + opt.batch_size)
+                att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
 
                 local initstate_c = fc7_images:clone()
                 local initstate_h = fc7_images
-                local init_input = torch.CudaTensor(input_text:size()[1]):fill(anno_utils.START_NUM)
+                local init_input = torch.CudaTensor(att_seq:size()[1]):fill(anno_utils.START_NUM)
                 
                 ------------------- forward pass -------------------
                 local embeddings = {}              -- input text embeddings
@@ -194,8 +196,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 local lstm_h = {[0]=initstate_h}   -- output values of LSTM
                 local predictions = {}             -- softmax outputs
                 local max_pred = {[1] = init_input}                -- max outputs 
-                local seq_len = input_text:size()[2]     -- sequence length 
-                seq_len = math.min(seq_len, max_t) -- get truncated
+                local seq_len = max_t     -- sequence length 
                 
                 for t = 1, seq_len do
                     embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
@@ -204,11 +205,10 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                     predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
                     _, max_pred[t + 1] = torch.max(predictions[t], 2)
                     max_pred[t + 1] = max_pred[t + 1]:view(-1)
-                    clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
                 end
 
                 index2word = dataloader.index2word
-                for k = 1, input_text:size()[1] do
+                for k = 1, att_seq:size()[1] do
                     local caption = ''
                     for t = 2, seq_len do
                         local word_index = max_pred[t][k]
@@ -219,11 +219,12 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                             caption = index2word[word_index]
                         end
                     end
-                    if j == 1 and k <= 10 then
-                        print(val_batches[j][k][1], caption)
+                    if j1 + k - 1 <= 10 then
+                        print(dataloader.val_set[j1 + k - 1], caption)
                     end
-                    table.insert(captions, {image_id = val_batches[j][k][1], caption = caption})
+                    table.insert(captions, {image_id = dataloader.val_set[j1 + k - 1], caption = caption})
                 end
+                j1 = j2 + 1
             end
 
             local eval_struct = M.language_eval(captions, 'attention')

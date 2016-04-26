@@ -38,7 +38,7 @@ function M.parse(arg)
     cmd:option('-truncate', 3, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_inst', 4000, 'max number of instances when calling comp error')
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('save_file_name', 'attention.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'attention.model', 'file name for saving model')
 
     local opt = cmd:parse(arg or {})
     return opt
