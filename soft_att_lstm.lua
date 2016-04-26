@@ -77,6 +77,7 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloader)
+    local DEBUG_LEN = true
     local params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
     local clones = {}
     anno_utils = dataloader.anno_utils
@@ -86,7 +87,14 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
     print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        clones[name] = model_utils.clone_many_times(proto, max_t)
+        if not DEBUG_LEN then
+            clones[name] = model_utils.clone_many_times(proto, max_t)
+        else
+            clones[name] = {}
+            for t = 1, max_t do
+                clones[name][t] = proto
+            end
+        end
     end
 
     local att_seq, fc7_images, input_text, output_text
@@ -196,6 +204,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
     local max_bleu_4 = 0
     local index = torch.randperm(#batches)
     for i = 1, #batches do
+        if DEBUG_LEN and #batches[index[i]][1][2] < max_t then goto continue end
         att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
         optim.adagrad(feval, params, optim_state)
         
