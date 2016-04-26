@@ -210,7 +210,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 index2word = dataloader.index2word
                 for k = 1, input_text:size()[1] do
                     local caption = ''
-                    for t = 1, seq_len do
+                    for t = 2, seq_len do
                         local word_index = max_pred[t][k]
                         if word_index == anno_utils.STOP_NUM then break end
                         if caption ~= '' then
