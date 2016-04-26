@@ -87,14 +87,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
     print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        if not DEBUG_LEN then
-            clones[name] = model_utils.clone_many_times(proto, max_t)
-        else
-            clones[name] = {}
-            for t = 1, max_t do
-                clones[name][t] = proto
-            end
-        end
+        clones[name] = model_utils.clone_many_times(proto, max_t)
     end
 
     local att_seq, fc7_images, input_text, output_text
