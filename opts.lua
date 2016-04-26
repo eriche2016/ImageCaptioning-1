@@ -33,7 +33,7 @@ function M.parse(arg)
     cmd:option('-eval_period', 100, 'Every certain period, evaluate current model')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-LR', 0.01, 'Initial learning rate')
-    cmd:option('-truncate', -1, 'Text longer than this size gets truncated. -1 for no truncation.')
+    cmd:option('-truncate', 40, 'Text longer than this size gets truncated. -1 for no truncation.')
 
     local opt = cmd:parse(arg or {})
     return opt

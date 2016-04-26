@@ -87,83 +87,76 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
         print('cloning '.. name)
         clones[name] = model_utils.clone_many_times(proto, max_t)
     end
+
+    local att_seq, fc7_images, input_text, output_text
+
+    local function feval(params_)
+        if params_ ~= params then
+            params:copy(params_)
+        end
+        grad_params:zero()
+
+        local initstate_c = fc7_images:clone()
+        local initstate_h = fc7_images
+        local dfinalstate_c = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
+        
+        -- print('Start forward')
+        ------------------- forward pass -------------------
+        local embeddings = {}              -- input text embeddings
+        local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
+        local lstm_h = {[0]=initstate_h}   -- output values of LSTM
+        local predictions = {}             -- softmax outputs
+        local loss = 0
+        local seq_len = input_text:size()[2]     -- sequence length 
+        local seq_len = math.min(seq_len, max_t) -- get truncated
+        
+        for t = 1, seq_len do
+            -- print('Time step ' .. t)
+            embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
+            lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
+                forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
+            
+            predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
+            loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
+        end
+                    
+        ------------------- backward pass -------------------
+        local dembeddings = {}                                    -- d loss / d input embeddings
+        local dlstm_c = {[seq_len]=dfinalstate_c}                 -- internal cell states of LSTM
+        local dlstm_h = {}                                        -- output values of LSTM
+        
+        for t = seq_len, 1, -1 do
+            -- print('Time step ' .. t)
+            local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
+            if t == seq_len then
+                assert(dlstm_h[t] == nil)
+                dlstm_h[t] = clones.softmax[t]:backward(lstm_h[t], doutput_t)
+            else
+                dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))     -- softmax backward
+            end
+            
+            -- backprop through LSTM timestep
+            dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
+                backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
+                {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
+
+            -- backprop through embeddings
+            clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
+            
+        end
+        
+        grad_params:clamp(-5, 5)
+        return loss, grad_params
+    end 
+    --- end of feval
     
     for i = 1, #batches do
-        
-        -- feval: loss, dloss/dx = feval(param_)
-        local function feval(params_)
-            if params_ ~= params then
-                params:copy(params_)
-            end
-            grad_params:zero()
-
-            local att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
-
-            local initstate_c = fc7_images:clone()
-            local initstate_h = fc7_images
-            local dfinalstate_c = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
-            
-            -- print('Start forward')
-            ------------------- forward pass -------------------
-            local embeddings = {}              -- input text embeddings
-            local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
-            local lstm_h = {[0]=initstate_h}   -- output values of LSTM
-            local predictions = {}             -- softmax outputs
-            local loss = 0
-            local seq_len = input_text:size()[2]     -- sequence length 
-            local seq_len = math.min(seq_len, max_t) -- get truncated
-            
-            for t = 1, seq_len do
-                -- print('Time step ' .. t)
-                embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
-                lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                    forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
-                
-                predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
-                loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
-            end
-                        
-            ------------------- backward pass -------------------
-            local dembeddings = {}                                    -- d loss / d input embeddings
-            local dlstm_c = {[seq_len]=dfinalstate_c}                 -- internal cell states of LSTM
-            local dlstm_h = {}                                        -- output values of LSTM
-            
-            for t = seq_len, 1, -1 do
-                print('Time step ' .. t)
-                local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
-                if t == seq_len then
-                    assert(dlstm_h[t] == nil)
-                    dlstm_h[t] = clones.softmax[t]:backward(lstm_h[t], doutput_t)
-                else
-                    dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))     -- softmax backward
-                end
-                
-                -- backprop through LSTM timestep
-                -- print(embeddings[t]:size(), att_seq:size(), lstm_c[t - 1]:size(), lstm_h[t - 1]:size(), dlstm_c[t]:size(),
-                    -- dlstm_h[t]:size())
-                dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
-                    backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
-                    {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
-    
-                -- backprop through embeddings
-                clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
-                
-            end
-            
-            -- print('Finish backward')
-            
-            grad_params:clamp(-5, 5)
-            return loss, grad_params
-        end 
-        --- end of feval
-        
-        local _, fs = optim.adagrad(feval, params, optim_state)
-        print('Epoch ' .. epoch .. ' iteration ' .. i .. ' train_loss ' .. fs[1]) 
-        collectgarbage()
+        att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
+        optim.adagrad(feval, params, optim_state)
         
         ----------------- Evaluate the model in validation set ----------------
-        if i % opt.eval_period == 0 then
-            print('Evaluate the model...')
+        if i % opt.eval_period == 0 then 
+            collectgarbage()
         end
         
         ::continue::
