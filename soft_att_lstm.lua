@@ -191,7 +191,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
                 local lstm_h = {[0]=initstate_h}   -- output values of LSTM
                 local predictions = {}             -- softmax outputs
-                local max_pred = {1 = init_input}                -- max outputs 
+                local max_pred = {[1] = init_input}                -- max outputs 
                 local seq_len = input_text:size()[2]     -- sequence length 
                 seq_len = math.min(seq_len, max_t) -- get truncated
                 
