@@ -113,7 +113,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         seq_len = math.min(seq_len, max_t) -- get truncated
         
         for t = 1, seq_len do
-            -- print('Time step ' .. t)
+            print('Forward time step ' .. t)
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
             lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
                 forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
@@ -129,7 +129,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
             local dlstm_h = {}                                        -- output values of LSTM
             
             for t = seq_len, 1, -1 do
-                -- print('Time step ' .. t)
+                print('Backward time step ' .. t)
                 local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))  -- criterion backward
                 if t == seq_len then
                     assert(dlstm_h[t] == nil)
