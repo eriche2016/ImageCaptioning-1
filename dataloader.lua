@@ -13,12 +13,16 @@ function DataLoader:__init(opt)
     self.anno_dirs = {}
     table.insert(self.anno_dirs, paths.concat(opt.data, opt.train_anno))
     table.insert(self.anno_dirs, paths.concat(opt.data, opt.val_anno))
+    self.fc7_dirs = {}
+    table.insert(self.fc7_dirs, paths.concat(opt.data, opt.train_fc7))
+    table.insert(self.fc7_dirs, paths.concat(opt.data, opt.val_fc7))
 
     self.att_size = opt.att_size
     self.feat_size = opt.feat_size
 
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
+    self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')
     self.id2captions, self.word2index, self.index2word, self.word_cnt = anno_utils.read_captions(self.anno_dirs, nil)
 
     print('Dataset summary:')
@@ -70,14 +74,16 @@ function DataLoader:gen_train_data(batch)
     local images = torch.CudaTensor(#batch, self.att_size, self.feat_size)
     local input_text = torch.CudaTensor(#batch, #batch[1][2] + 1)
     local output_text = torch.CudaTensor(#batch, #batch[1][2] + 1)
+    local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
     for i = 1, #batch do
         -- caption = {id, caption}
         local id, caption = batch[i][1], batch[i][2]
         -- local file = files[id2index[id]]
         local file = self.id2file[id]
+        local fc7_file = self.id2fc7_file[id]
         -- from 512*14*14
-        images[i] = torch.load(file):reshape(self.att_size, self.feat_size):transpose(1,2)
-        -- images[i] = torch.load(file)
+        images[i]:copy(torch.load(file):reshape(self.feat_size, self.att_size):transpose(1, 2))
+        fc7_images[i]:copy(torch.load(fc7_file))
         for j = 1, #caption do
             input_text[i][j + 1] = caption[j]
             output_text[i][j] = caption[j]
@@ -85,7 +91,7 @@ function DataLoader:gen_train_data(batch)
         input_text[i][1] = anno_utils.START_NUM
         output_text[i][#caption + 1] = anno_utils.STOP_NUM
     end
-    return images, input_text, output_text
+    return images, fc7_images, input_text, output_text
 end
 
                 

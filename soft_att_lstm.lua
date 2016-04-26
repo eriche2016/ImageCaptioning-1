@@ -24,22 +24,22 @@ function M.soft_att_lstm(opt)
     local input_size = opt.emb_size
 
     local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
-    local att_seq = nn.Identity()()   -- batch * att_size * image_dim -- the image patches
+    local att_seq = nn.Identity()()   -- batch * att_size * feat_size -- the image patches
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
     ------------ Attention part --------------------
-    local att = nn.Reshape(batch_size * att_size, feat_size)(att_seq)
+    local att = nn.View(-1, feat_size)(att_seq)
     att = nn.Linear(feat_size, rnn_size)(att)
-    att = nn.Reshape(batch_size, att_size, rnn_size)(att)      -- batch * att_size * hid <- batch * att_size * image_dim
+    att = nn.View(-1, att_size, rnn_size)(att)                 -- batch * att_size * rnn_size <- batch * att_size * feat_size
 
-    local dot = nn.Mixture(3){prev_h, att}                     -- batch * att_size <- (batch * hid, batch * att_size * hid)
+    local dot = nn.Mixture(3){prev_h, att}                     -- batch * att_size <- (batch * rnn_size, batch * att_size * rnn_size)
     local weight = nn.SoftMax()(dot)                           -- batch * att_size
-    local att_t = nn.Transpose({2, 3})(att)                    -- batch * hid * att_size
-    att = nn.Mixture(3){weight, att_t}                         -- batch * hid <- (batch * att_size, batch * hid * att_size)
+    local att_t = nn.Transpose({2, 3})(att)                    -- batch * rnn_size * att_size
+    att = nn.Mixture(3){weight, att_t}                         -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
     
     --- Input to LSTM
-    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att) -- batch * (4*hid) <- batch * hid
+    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att) -- batch * (4*rnn_size) <- batch * rnn_size
 
     ------------- LSTM main part --------------------
     local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
@@ -64,7 +64,7 @@ function M.soft_att_lstm(opt)
         nn.CMulTable()({forget_gate, prev_c}),
         nn.CMulTable()({in_gate,     in_transform})
     })
-    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * hid
+    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
       
     return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
     
@@ -77,9 +77,8 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, epoch, opt, batches, optim_state, dataloader)
-    local params, grad_params = model_utils.combine_all_parameters(model.embed, model.lstm, model.softmax)
+    local params, grad_params = model_utils.combine_all_parameters(model.embed, model.soft_att_lstm, model.softmax)
     local clones = {}
-    local losses = {}
     
     -- Clone models
     for name, proto in pairs(model) do
@@ -93,7 +92,7 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
     
     -- LSTM final state's backward message (dloss/dfinalstate) is 0, since it doesn't influence predictions
     local dfinalstate_c = initstate_c:clone()
-    local dfinalstate_h = initstate_c:clone()
+    -- local dfinalstate_h = initstate_c:clone()
         
     -- Parameters
     -- images: batch_size * L * D
@@ -103,14 +102,18 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
     
     for i = 1, #batches do
         -- Get training data
-        if tablex.size(batches[i]) ~= opt.batch_size then
-            goto continue
-        end
+        -- if tablex.size(batches[i]) ~= opt.batch_size then
+        --     goto continue
+        -- end
         
-        local att_seq, input_text, output_text = dataloader:gen_train_data(batches[i])
+        local att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
         print(att_seq:type())
+        print(fc7_images:type())
         print(input_text:type())
         print(output_text:type())
+
+        initstate_c:copy(fc7_images)
+        initstate_h:copy(fc7_images)
                 
         -- feval: loss, dloss/dx = feval(param_)
         local function feval(params_)
@@ -140,7 +143,6 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
                         
             ------------------- backward pass -------------------
             local dembeddings = {}                                    -- d loss / d input embeddings
-            local datt_seq = nil
             local dlstm_c = {[seq_len]=dfinalstate_c}                 -- internal cell states of LSTM
             local dlstm_h = {}                                        -- output values of LSTM
             
@@ -155,7 +157,7 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
                 end
                 
                 -- backprop through LSTM timestep
-                dembeddings[t], datt_seq, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
+                dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
                     backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
                     {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
     
@@ -166,17 +168,12 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
             
             -- print('Finish backward')
             
-            -- transfer final state to initial state (BPTT)
-            initstate_c:copy(lstm_c[#lstm_c])
-            initstate_h:copy(lstm_h[#lstm_h])
-            
             grad_params:clamp(-5, 5)
             return loss, grad_params
         end 
         --- end of feval
         
         local _, fs = optim.adagrad(feval, params, optim_state)
-        losses[#losses + 1] = fs[1]
         print('Epoch ' .. epoch .. ' iteration ' .. i .. ' train_loss ' .. fs[1]) 
         collectgarbage()
         
