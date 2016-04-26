@@ -1,7 +1,6 @@
 require 'nn'
 require 'cunn'
 require 'nngraph'
-require 'mixture'
 require 'optim'
 local model_utils = require 'utils.model_utils'
 local tablex = require 'pl.tablex'
@@ -33,10 +32,10 @@ function M.soft_att_lstm(opt)
     att = nn.Linear(feat_size, rnn_size)(att)
     att = nn.View(-1, att_size, rnn_size)(att)                 -- batch * att_size * rnn_size <- batch * att_size * feat_size
 
-    local dot = nn.Mixture(3){prev_h, att}                     -- batch * att_size <- (batch * rnn_size, batch * att_size * rnn_size)
+    local dot = nn.MixtureTable(3){prev_h, att}                     -- batch * att_size <- (batch * rnn_size, batch * att_size * rnn_size)
     local weight = nn.SoftMax()(dot)                           -- batch * att_size
     local att_t = nn.Transpose({2, 3})(att)                    -- batch * rnn_size * att_size
-    att = nn.Mixture(3){weight, att_t}                         -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
+    att = nn.MixtureTable(3){weight, att_t}                         -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
     
     --- Input to LSTM
     local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att) -- batch * (4*rnn_size) <- batch * rnn_size
@@ -109,7 +108,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         local predictions = {}             -- softmax outputs
         local loss = 0
         local seq_len = input_text:size()[2]     -- sequence length 
-        local seq_len = math.min(seq_len, max_t) -- get truncated
+        seq_len = math.min(seq_len, max_t) -- get truncated
         
         for t = 1, seq_len do
             -- print('Time step ' .. t)
@@ -164,19 +163,76 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         return loss
     end
     
+    local max_bleu_4 = 0
+    local index = torch.randperm(#batches)
     for i = 1, #batches do
-        att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
+        att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
         optim.adagrad(feval, params, optim_state)
         
         ----------------- Evaluate the model in validation set ----------------
-        if i % opt.loss_period == 0 then
+        if i == 1 or i % opt.loss_period == 0 then
             train_loss = comp_error(batches)
             val_loss = comp_error(val_batches)
             print(epoch, i, 'train', train_loss, 'val', val_loss)
+            collectgarbage()
         end
 
-        if i % opt.eval_period == 0 then 
-            collectgarbage()
+        if i == 1 or i % opt.eval_period == 0 then
+            local captions = {}
+            for j = 1, #val_batches do
+                att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(val_batches[j])
+
+                local initstate_c = fc7_images:clone()
+                local initstate_h = fc7_images
+                local init_input = torch.CudaTensor(input_text:size()[1]):fill(anno_utils.START_NUM)
+                
+                ------------------- forward pass -------------------
+                local embeddings = {}              -- input text embeddings
+                local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
+                local lstm_h = {[0]=initstate_h}   -- output values of LSTM
+                local predictions = {}             -- softmax outputs
+                local max_pred = {1 = init_input}                -- max outputs 
+                local seq_len = input_text:size()[2]     -- sequence length 
+                seq_len = math.min(seq_len, max_t) -- get truncated
+                
+                for t = 1, seq_len do
+                    embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
+                    lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
+                        forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
+                    predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
+                    max_pred[t + 1] = torch.max(predictions[t], 2)[2]:view(-1)
+                    clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
+                end
+
+                index2word = dataloader.index2word
+                for k = 1, input_text:size()[1] do
+                    local caption = ''
+                    for t = 1, seq_len do
+                        local word_index = max_pred[t][l]
+                        if word_index == anno_utils.STOP_NUM then break end
+                        if caption ~= '' then
+                            caption = caption .. ' ' .. index2word[word_index]
+                        else
+                            caption = index2word[word_index]
+                        end
+                    end
+                    if j == 1 and k <= 10 then
+                        print(val_batches[j][k][1], caption)
+                    end
+                    table.insert(captions, {image_id = val_batches[j][k][1], caption})
+                end
+            end
+
+            local eval_struct = utils.language_eval(captions, 'attention')
+            local bleu_4 = eval_struct.Bleu_4
+
+            if bleu_4 > max_bleu_4 then
+                max_bleu_4 = bleu_4
+                if opt.save_file then
+                    torch.save('models/' .. opt.save_file_name, model)
+                end
+            end
+            print(epoch, i, 'max_bleu', max_bleu_4, 'bleu', bleu_4)
         end
         
         ::continue::
