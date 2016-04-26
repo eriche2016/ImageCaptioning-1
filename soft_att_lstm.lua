@@ -101,7 +101,7 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
 
             local initstate_c = fc7_images:clone()
             local initstate_h = fc7_images
-            local dfinalstate_c = torch.zeros(input_text:size()[1], opt.lstm_size)
+            local dfinalstate_c = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
             
             -- print('Start forward')
             ------------------- forward pass -------------------
