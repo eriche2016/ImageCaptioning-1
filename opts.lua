@@ -30,13 +30,13 @@ function M.parse(arg)
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
-    cmd:option('-eval_period', 100, 'Every certain period, evaluate current model')
-    cmd:option('-loss_period', 10, 'Every given number of iterations, compute the loss on train and test')
+    cmd:option('-eval_period', 3000, 'Every certain period, evaluate current model')
+    cmd:option('-loss_period', 600, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 32, 'Batch size for testing')
     cmd:option('-LR', 0.01, 'Initial learning rate')
-    cmd:option('-truncate', 3, 'Text longer than this size gets truncated. -1 for no truncation.')
-    cmd:option('-max_eval_inst', 4000, 'max number of instances when calling comp error')
+    cmd:option('-truncate', 35, 'Text longer than this size gets truncated. -1 for no truncation.')
+    cmd:option('-max_eval_inst', 20000, 'max number of instances when calling comp error. 20000 = 4000 * 5')
     cmd:option('-save_file', true, 'whether save model file?')
     cmd:option('-save_file_name', 'attention.model', 'file name for saving model')
 

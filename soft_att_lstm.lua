@@ -183,7 +183,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
             local captions = {}
             local j1 = 1
             while j1 <= #dataloader.val_set do
-                local j2 = math.min(#dataloader.val_set, j1 + opt.batch_size)
+                local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                 att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
 
                 local initstate_c = fc7_images:clone()
