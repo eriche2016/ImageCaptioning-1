@@ -3,6 +3,7 @@ require 'cunn'
 require 'nngraph'
 require 'optim'
 local model_utils = require 'utils.model_utils'
+local eval_utils = require 'utils.eval_utils'
 local tablex = require 'pl.tablex'
 
 local M = {}
