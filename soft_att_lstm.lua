@@ -197,13 +197,13 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 seq_len = math.min(seq_len, max_t) -- get truncated
                 
                 for t = 1, seq_len do
-                    print(max_pred[t]:size())
                     embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
                     lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
                         forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
                     predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
                     print(torch.max(predictions[t], 2)[2]:size())
-                    max_pred[t + 1] = torch.max(predictions[t], 2)[2]:view(-1)
+                    _, max_pred[t + 1] = torch.max(predictions[t], 2)
+                    max_pred[t + 1] = max_pred[t + 1]:view(-1)
                     clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
                 end
 
