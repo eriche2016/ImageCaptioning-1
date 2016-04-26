@@ -152,7 +152,8 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
     
     for i = 1, #batches do
         att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
-        optim.adagrad(feval, params, optim_state)
+        local _, fs = optim.adagrad(feval, params, optim_state)
+        print(fs[1])
         
         ----------------- Evaluate the model in validation set ----------------
         if i % opt.eval_period == 0 then 
