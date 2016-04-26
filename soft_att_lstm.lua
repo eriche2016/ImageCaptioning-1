@@ -88,41 +88,20 @@ function M.train(model, epoch, opt, batches, optim_state, dataloader)
         clones[name] = model_utils.clone_many_times(proto, max_t)
     end
     
-    -- LSTM initial state
-    local initstate_c = torch.zeros(opt.batch_size, opt.lstm_size):cuda()
-    local initstate_h = initstate_c:clone()
-    
-    -- LSTM final state's backward message (dloss/dfinalstate) is 0, since it doesn't influence predictions
-    local dfinalstate_c = initstate_c:clone()
-    -- local dfinalstate_h = initstate_c:clone()
-        
-    -- Parameters
-    -- images: batch_size * L * D
-    -- input_text: batch_size * seq_len
-    -- output_text: batch_size * seq_len
-    local images, input_text, output_text = nil, nil, nil
-    
     for i = 1, #batches do
-        -- Get training data
-        -- if tablex.size(batches[i]) ~= opt.batch_size then
-        --     goto continue
-        -- end
         
-        local att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
-        print(att_seq:type())
-        print(fc7_images:type())
-        print(input_text:type())
-        print(output_text:type())
-
-        initstate_c:copy(fc7_images)
-        initstate_h:copy(fc7_images)
-                
         -- feval: loss, dloss/dx = feval(param_)
         local function feval(params_)
             if params_ ~= params then
                 params:copy(params_)
             end
             grad_params:zero()
+
+            local att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[i])
+
+            local initstate_c = fc7_images:clone()
+            local initstate_h = fc7_images
+            local dfinalstate_c = input_text:clone():zero()
             
             -- print('Start forward')
             ------------------- forward pass -------------------
