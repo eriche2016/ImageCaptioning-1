@@ -139,10 +139,14 @@ function M.soft_att_lstm_concat(opt)
 
     ------------ Attention part --------------------
     local att = nn.View(-1, feat_size)(att_seq)
+    att = nn.Linear(feat_size, feat_size)(att)          -- batch * feat_size -> batch * feat_size
     att = nn.Linear(feat_size, 1)(att)                  -- (batch * att_size) * 1
+    
     att = nn.View(-1, att_size)(att)                    -- batch * att_size 
 
-    local att_h = nn.Linear(rnn_size, 1)(prev_h)        -- mapping hidden state to 1, batch * 1
+    local att_h = nn.Linear(rnn_size, feat_size)(prev_h)        -- mapping hidden state to feat_size, batch * feat_size
+    att_h = nn.Linear(feat_size, 1)(att_h)              -- batch * feat_size -> batch * 1
+    
     att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * 1 -> batch * att_size * 1
     att_h = nn.Squeeze()(att_h)                         -- batch * att_size
     
