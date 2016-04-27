@@ -9,7 +9,7 @@ function M.parse(arg)
 
     ------------ Model options ----------------------
     cmd:option('-emb_size', 100, 'Word embedding size')
-    cmd:option('-lstm_size', 4096, 'LSTM size')
+    cmd:option('-lstm_size', 1024, 'LSTM size')
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
     cmd:option('-fc7_size', 4096, 'the dimension of fc7')
@@ -17,7 +17,7 @@ function M.parse(arg)
     cmd:option('-val_size', 4000, 'Validation set size')
     cmd:option('-test_size', 4000, 'Test set size')
 
-    cmd:option('-use_attention', false, 'Use attention or not')
+    cmd:option('-use_attention', true, 'Use attention or not')
 
     ------------ General options --------------------
     cmd:option('-data', 'data/', 'Path to dataset')
@@ -40,7 +40,7 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'lstm.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'attention.1024.model', 'file name for saving model')
 
     local opt = cmd:parse(arg or {})
     opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
