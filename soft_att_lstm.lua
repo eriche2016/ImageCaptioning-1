@@ -293,6 +293,9 @@ function M.create_model(opt)
         model.soft_att_lstm:cuda()
         model.softmax:cuda()
         model.criterion:cuda()
+        if opt.lstm_size ~= opt.fc7_size then
+            model.linear:cuda()
+        end
     end
     return model
 end
