@@ -165,7 +165,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
 
             if opt.lstm_size ~= opt.fc7_size then
                 dlstm_c[0]:add(dlstm_h[0])
-                linear:backward(fc7_images, dlstm_c[0])
+                model.linear:backward(fc7_images, dlstm_c[0])
             end
         end
         
