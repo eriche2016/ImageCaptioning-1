@@ -77,8 +77,13 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloader)
-    local DEBUG_LEN = false
-    local params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
+    local DEBUG_LEN = true
+    local params, grad_params
+    if opt.lstm_size ~= opt.fc7_size then
+        params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.linear)
+    else
+        model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
+    end
     local clones = {}
     anno_utils = dataloader.anno_utils
     
@@ -87,7 +92,9 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
     print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        clones[name] = model_utils.clone_many_times(proto, max_t)
+        if name ~= 'linear' then 
+            clones[name] = model_utils.clone_many_times(proto, max_t)
+        end
     end
 
     local att_seq, fc7_images, input_text, output_text
@@ -99,8 +106,15 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         end
         grad_params:zero()
 
-        local initstate_c = fc7_images:clone()
-        local initstate_h = fc7_images
+        local image_map
+        if opt.lstm_size ~= opt.fc7_size then
+            image_map = model.linear:forward(fc7_images)
+        else
+            image_map = fc7_images
+        end
+
+        local initstate_c = image_map:clone()
+        local initstate_h = image_map
         local dfinalstate_c = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
         
         -- print('Start forward')
@@ -148,6 +162,11 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 -- backprop through embeddings
                 clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
             end
+
+            if opt.lstm_size ~= opt.fc7_size then
+                dlstm_c[0]:add(dlstm_h[0])
+                linear:backward(fc7_images, dlstm_c[0])
+            end
         end
         
         grad_params:clamp(-5, 5)
@@ -190,8 +209,15 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
                 local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                 att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
 
-                local initstate_c = fc7_images:clone()
-                local initstate_h = fc7_images
+                local image_map
+                if opt.lstm_size ~= opt.fc7_size then
+                    image_map = model.linear:forward(fc7_images)
+                else
+                    image_map = fc7_images
+                end
+
+                local initstate_c = image_map:clone()
+                local initstate_h = image_map
                 local init_input = torch.CudaTensor(att_seq:size()[1]):fill(anno_utils.START_NUM)
                 
                 ------------------- forward pass -------------------
@@ -258,6 +284,8 @@ function M.create_model(opt)
     model.soft_att_lstm = M.soft_att_lstm(opt) 
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
     model.criterion = nn.ClassNLLCriterion()
+    if opt.lstm_size ~= opt.fc7_size then
+        model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     
     if opt.nGPU > 0 then
         model.emb:cuda()

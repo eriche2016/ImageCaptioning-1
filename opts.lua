@@ -9,7 +9,7 @@ function M.parse(arg)
 
     ------------ Model options ----------------------
     cmd:option('-emb_size', 100, 'Word embedding size')
-    cmd:option('-lstm_size', 4096, 'LSTM size')
+    cmd:option('-lstm_size', 2048, 'LSTM size')
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
     cmd:option('-fc7_size', 4096, 'the dimension of fc7')
@@ -30,17 +30,19 @@ function M.parse(arg)
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
-    cmd:option('-eval_period', 12000, 'Every certain period, evaluate current model')
-    cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
-    cmd:option('-batch_size', 8, 'Batch size in SGD')
+    -- cmd:option('-eval_period', 12000, 'Every certain period, evaluate current model')
+    -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
+    cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 0.01, 'Initial learning rate')
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_inst', 20000, 'max number of instances when calling comp error. 20000 = 4000 * 5')
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'attention.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'attention.2048.model', 'file name for saving model')
 
     local opt = cmd:parse(arg or {})
+    opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
+    opt.loss_period = math.floor(600 * 32 / opt.batch_size)
     return opt
 end
 
