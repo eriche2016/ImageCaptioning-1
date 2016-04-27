@@ -113,7 +113,7 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
         local seq_len = input_text:size()[2]     -- sequence length 
         seq_len = math.min(seq_len, max_t) -- get truncated
         
-        print('seq_len', seq_len)
+        if DEBUG_LEN then print('seq_len', seq_len) end
         for t = 1, seq_len do
             if DEBUG_LEN then print('Forward time step ' .. t) end
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
