@@ -286,6 +286,7 @@ function M.create_model(opt)
     model.criterion = nn.ClassNLLCriterion()
     if opt.lstm_size ~= opt.fc7_size then
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
+    end
     
     if opt.nGPU > 0 then
         model.emb:cuda()
