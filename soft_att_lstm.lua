@@ -146,6 +146,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             else
                 lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
                     forward{embeddings[t], lstm_c[t - 1], lstm_h[t - 1]})
+            end
             
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
             loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
@@ -176,6 +177,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     dembeddings[t], dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                         backward({embeddings[t], lstm_c[t - 1], lstm_h[t - 1]},
                         {dlstm_c[t], dlstm_h[t]}))
+                end
 
                 -- backprop through embeddings
                 clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
