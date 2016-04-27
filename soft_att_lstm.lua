@@ -71,7 +71,11 @@ function M.soft_att_lstm(opt)
     })
     local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
     
-    return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
+    if opt.use_attention then
+        return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
+    else
+        return nn.gModule({x, prev_c, prev_h}, {next_c, next_h})
+    end
     
 end
 
@@ -136,8 +140,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for t = 1, seq_len do
             if DEBUG_LEN then print('Forward time step ' .. t) end
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))    -- emb forward
-            lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
+            if opt.use_attention then
+                lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
+                    forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
+            else
+                lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
+                    forward{embeddings[t], lstm_c[t - 1], lstm_h[t - 1]})
             
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
             loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
@@ -160,9 +168,14 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 end
                 
                 -- backprop through LSTM timestep
-                dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
-                    backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
-                    {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
+                if opt.use_attention then
+                    dembeddings[t], _, dlstm_c[t-1], dlstm_h[t-1] = unpack(clones.soft_att_lstm[t]:
+                        backward({embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]},
+                        {dlstm_c[t], dlstm_h[t]}))                                           -- lstm backward
+                else
+                    dembeddings[t], dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.soft_att_lstm[t]:
+                        backward({embeddings[t], lstm_c[t - 1], lstm_h[t - 1]},
+                        {dlstm_c[t], dlstm_h[t]}))
 
                 -- backprop through embeddings
                 clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])          -- emb backward
@@ -236,8 +249,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     
                     for t = 1, seq_len do
                         embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
-                        lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                            forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
+                        if opt.use_attention then
+                            lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
+                                forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})
+                        else
+                            lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
+                                forward{embeddings[t], lstm_c[t - 1], lstm_h[t - 1]})
+                        end    
                         predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
                         _, max_pred[t + 1] = torch.max(predictions[t], 2)
                         max_pred[t + 1] = max_pred[t + 1]:view(-1)
