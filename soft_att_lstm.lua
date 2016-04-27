@@ -31,15 +31,15 @@ function M.soft_att_lstm(opt)
     ------------ Attention part --------------------
     local att = nn.View(-1, feat_size)(att_seq)
     att = nn.Linear(feat_size, rnn_size)(att)
-    att = nn.View(-1, att_size, rnn_size)(att)                 -- batch * att_size * rnn_size <- batch * att_size * feat_size
+    att = nn.View(-1, att_size, rnn_size)(att)          -- batch * att_size * rnn_size <- batch * att_size * feat_size
 
-    local dot = nn.MixtureTable(3){prev_h, att}                     -- batch * att_size <- (batch * rnn_size, batch * att_size * rnn_size)
-    local weight = nn.SoftMax()(dot)                           -- batch * att_size
-    local att_t = nn.Transpose({2, 3})(att)                    -- batch * rnn_size * att_size
-    att = nn.MixtureTable(3){weight, att_t}                         -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
+    local dot = nn.MixtureTable(3){prev_h, att}         -- batch * att_size <- (batch * rnn_size, batch * att_size * rnn_size)
+    local weight = nn.SoftMax()(dot)                    -- batch * att_size
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)             -- batch * rnn_size * att_size
+    local att_res = nn.MixtureTable(3){weight, att_seq_t}       -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
     
     --- Input to LSTM
-    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att) -- batch * (4*rnn_size) <- batch * rnn_size
+    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)    -- batch * (4*rnn_size) <- batch * rnn_size
 
     ------------- LSTM main part --------------------
     local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
@@ -150,12 +150,12 @@ function M.soft_att_lstm_concat(opt)
     local weight = nn.SoftMax()(dot)
         
     local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
-    local att_res = nn.MixtureTable(3){weight, att_seq_t}         -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
-    
+    local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
+
     -------------- End of attention part -----------
     
     --- Input to LSTM
-    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att_res) -- batch * (4*rnn_size) <- batch * rnn_size
+    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
     local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
