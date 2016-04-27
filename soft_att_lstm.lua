@@ -227,7 +227,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[j])
             local t_loss, _ = feval(params, false)
             loss = loss + t_loss
-            inst_cnt = inst_cnt + input_text:size()[1]
         end
         return loss
     end
