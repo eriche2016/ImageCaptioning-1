@@ -30,8 +30,8 @@ function M.parse(arg)
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
-    cmd:option('-eval_period', 9000, 'Every certain period, evaluate current model')
-    cmd:option('-loss_period', 1800, 'Every given number of iterations, compute the loss on train and test')
+    cmd:option('-eval_period', 12000, 'Every certain period, evaluate current model')
+    cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 8, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 0.01, 'Initial learning rate')
