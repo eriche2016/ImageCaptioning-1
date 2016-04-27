@@ -151,7 +151,7 @@ function M.soft_att_lstm_concat(opt)
         dot = nn.Tanh()(dot)                                -- batch * att_size * att_hid_size
         dot = nn.View(-1, att_hid_size)(dot)                -- (batch * att_size) * att_hid_size
         dot = nn.Linear(att_hid_size, 1)(dot)               -- (batch * att_size) * 1
-        dot = nn.View(-1, att_size)(dot)                    -- batch * att_size
+        dot = nn.Squeeze()(dot)                             -- batch * att_size
     else
         att = nn.Linear(feat_size, 1)(att)                  -- (batch * att_size) * 1
         att = nn.View(-1, att_size)(att)                    -- batch * att_size
