@@ -139,20 +139,22 @@ function M.soft_att_lstm_concat(opt)
     local prev_h = nn.Identity()()
 
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(att_seq)         -- batch * att_size * feat_size
+    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
-        att = nn.Linear(feat_size, att_hid_size)(att)       -- batch * att_size * att_hid_size
+        att = nn.Linear(feat_size, att_hid_size)(att)       -- (batch * att_size) * att_hid_size
+        att = nn.View(-1, att_size, att_hid_size)(att)      -- batch * att_size * att_hid_size
         att_h = nn.Linear(rnn_size, att_hid_size)(prev_h)   -- batch * att_hid_size
         att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * att_size * att_hid_size
         dot = nn.CAddTable(){att_h, att}                    -- batch * att_size * att_hid_size
-        dot = nn.Tanh()(dot)                                -- batch * att_size
-        dot = nn.Linear(att_hid_size, 1)(dot)               -- batch * att_size * 1
-        dot = nn.Squeeze()(dot)                             -- batch * att_size
+        dot = nn.Tanh()(dot)                                -- batch * att_size * att_hid_size
+        dot = nn.View(-1, att_hid_size)(dot)                -- (batch * att_size) * att_hid_size
+        dot = nn.Linear(att_hid_size, 1)(dot)               -- (batch * att_size) * 1
+        dot = nn.View(-1)(dot)                              -- batch * att_size
     else
-        att = nn.Linear(feat_size, 1)(att)                  -- batch * att_size * 1
-        att = nn.Squeeze()(att)                             -- batch * att_size
+        att = nn.Linear(feat_size, 1)(att)                  -- (batch * att_size) * 1
+        att = nn.View(-1, att_size)(att)                    -- batch * att_size
         att_h = nn.Linear(rnn_size, 1)(prev_h)              -- batch * 1
         att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * att_size * 1
         att_h = nn.Squeeze()(att_h)                         -- batch * att_size
