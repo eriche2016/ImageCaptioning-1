@@ -76,8 +76,8 @@ end
 -- INPUT
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
-function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloader)
-    local DEBUG_LEN = true
+function M.train(model, opt, batches, val_batches, optim_state, dataloader)
+    local DEBUG_LEN = false
     local params, grad_params
     if opt.lstm_size ~= opt.fc7_size then
         params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.linear)
@@ -187,91 +187,94 @@ function M.train(model, epoch, opt, batches, val_batches, optim_state, dataloade
     end
     
     local max_bleu_4 = 0
-    local index = torch.randperm(#batches)
-    for i = 1, #batches do
-        if DEBUG_LEN and #batches[index[i]][1][2] < max_t then goto continue end
-        att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
-        optim.adagrad(feval, params, optim_state)
-        if DEBUG_LEN then goto continue end
-        
-        ----------------- Evaluate the model in validation set ----------------
-        if i == 1 or i % opt.loss_period == 0 then
-            train_loss = comp_error(batches)
-            val_loss = comp_error(val_batches)
-            print(epoch, i, 'train', train_loss, 'val', val_loss)
-            collectgarbage()
-        end
+    for epoch = 1, opt.nEpochs do
+        local index = torch.randperm(#batches)
+        for i = 1, #batches do
+            if DEBUG_LEN and #batches[index[i]][1][2] < max_t then goto continue end
+            att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
+            optim.adagrad(feval, params, optim_state)
+            if DEBUG_LEN then goto continue end
+            
+            ----------------- Evaluate the model in validation set ----------------
+            if i == 1 or i % opt.loss_period == 0 then
+                train_loss = comp_error(batches)
+                val_loss = comp_error(val_batches)
+                print(epoch, i, 'train', train_loss, 'val', val_loss)
+                collectgarbage()
+            end
 
-        if i == 1 or i % opt.eval_period == 0 then
-            local captions = {}
-            local j1 = 1
-            while j1 <= #dataloader.val_set do
-                local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
-                att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
+            if i == 1 or i % opt.eval_period == 0 then
+                local captions = {}
+                local j1 = 1
+                while j1 <= #dataloader.val_set do
+                    local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
+                    att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
 
-                local image_map
-                if opt.lstm_size ~= opt.fc7_size then
-                    image_map = model.linear:forward(fc7_images)
-                else
-                    image_map = fc7_images
-                end
+                    local image_map
+                    if opt.lstm_size ~= opt.fc7_size then
+                        image_map = model.linear:forward(fc7_images)
+                    else
+                        image_map = fc7_images
+                    end
 
-                local initstate_c = image_map:clone()
-                local initstate_h = image_map
-                local init_input = torch.CudaTensor(att_seq:size()[1]):fill(anno_utils.START_NUM)
-                
-                ------------------- forward pass -------------------
-                local embeddings = {}              -- input text embeddings
-                local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
-                local lstm_h = {[0]=initstate_h}   -- output values of LSTM
-                local predictions = {}             -- softmax outputs
-                local max_pred = {[1] = init_input}                -- max outputs 
-                local seq_len = max_t     -- sequence length 
-                
-                for t = 1, seq_len do
-                    embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
-                    lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                        forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
-                    predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
-                    _, max_pred[t + 1] = torch.max(predictions[t], 2)
-                    max_pred[t + 1] = max_pred[t + 1]:view(-1)
-                end
+                    local initstate_c = image_map:clone()
+                    local initstate_h = image_map
+                    local init_input = torch.CudaTensor(att_seq:size()[1]):fill(anno_utils.START_NUM)
+                    
+                    ------------------- forward pass -------------------
+                    local embeddings = {}              -- input text embeddings
+                    local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
+                    local lstm_h = {[0]=initstate_h}   -- output values of LSTM
+                    local predictions = {}             -- softmax outputs
+                    local max_pred = {[1] = init_input}                -- max outputs 
+                    local seq_len = max_t     -- sequence length 
+                    
+                    for t = 1, seq_len do
+                        embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
+                        lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
+                            forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})    
+                        predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
+                        _, max_pred[t + 1] = torch.max(predictions[t], 2)
+                        max_pred[t + 1] = max_pred[t + 1]:view(-1)
+                    end
 
-                index2word = dataloader.index2word
-                for k = 1, att_seq:size()[1] do
-                    local caption = ''
-                    for t = 2, seq_len do
-                        local word_index = max_pred[t][k]
-                        if word_index == anno_utils.STOP_NUM then break end
-                        if caption ~= '' then
-                            caption = caption .. ' ' .. index2word[word_index]
-                        else
-                            caption = index2word[word_index]
+                    index2word = dataloader.index2word
+                    for k = 1, att_seq:size()[1] do
+                        local caption = ''
+                        for t = 2, seq_len do
+                            local word_index = max_pred[t][k]
+                            if word_index == anno_utils.STOP_NUM then break end
+                            if caption ~= '' then
+                                caption = caption .. ' ' .. index2word[word_index]
+                            else
+                                caption = index2word[word_index]
+                            end
                         end
+                        if j1 + k - 1 <= 10 then
+                            print(dataloader.val_set[j1 + k - 1], caption)
+                        end
+                        table.insert(captions, {image_id = dataloader.val_set[j1 + k - 1], caption = caption})
                     end
-                    if j1 + k - 1 <= 10 then
-                        print(dataloader.val_set[j1 + k - 1], caption)
+                    j1 = j2 + 1
+                end
+
+                local eval_struct = M.language_eval(captions, 'attention')
+                local bleu_4 = eval_struct.Bleu_4
+
+                if bleu_4 > max_bleu_4 then
+                    max_bleu_4 = bleu_4
+                    if opt.save_file then
+                        torch.save('models/' .. opt.save_file_name, model)
                     end
-                    table.insert(captions, {image_id = dataloader.val_set[j1 + k - 1], caption = caption})
                 end
-                j1 = j2 + 1
+                print(epoch, i, 'max_bleu', max_bleu_4, 'bleu', bleu_4)
             end
-
-            local eval_struct = M.language_eval(captions, 'attention')
-            local bleu_4 = eval_struct.Bleu_4
-
-            if bleu_4 > max_bleu_4 then
-                max_bleu_4 = bleu_4
-                if opt.save_file then
-                    torch.save('models/' .. opt.save_file_name, model)
-                end
-            end
-            print(epoch, i, 'max_bleu', max_bleu_4, 'bleu', bleu_4)
+            
+            ::continue::
         end
-        
-        ::continue::
+        -- end of for i
     end
-    -- end of for loop    
+    -- end of for epoch
 end
 
 
