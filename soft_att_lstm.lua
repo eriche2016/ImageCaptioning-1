@@ -156,8 +156,9 @@ function M.soft_att_lstm_concat(opt)
         att_h = nn.Linear(rnn_size, 1)(prev_h)              -- batch * 1
         att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * att_size * 1
         att_h = nn.Squeeze()(att_h)                         -- batch * att_size
-        dot = nn.CAddTable(){att_h, att}
-    
+        dot = nn.CAddTable(){att_h, att}                    -- batch * att_size
+    end
+
     local weight = nn.SoftMax()(dot)
         
     local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
