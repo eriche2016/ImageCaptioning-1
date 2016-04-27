@@ -13,6 +13,7 @@ function M.parse(arg)
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
     cmd:option('-fc7_size', 4096, 'the dimension of fc7')
+    cmd:option('-att_hid_size', 512, 'the hidden size of the attention MLP; 0 if not using hidden layer')
     
     cmd:option('-val_size', 4000, 'Validation set size')
     cmd:option('-test_size', 4000, 'Test set size')

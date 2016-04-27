@@ -131,7 +131,6 @@ function M.soft_att_lstm_concat(opt)
     local batch_size = opt.batch_size
     local rnn_size = opt.lstm_size
     local input_size = opt.emb_size
-    local att_hid_size = opt.att_hid_size
 
     local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
     local att_seq = nn.Identity()()   -- batch * att_size * feat_size -- the image patches
@@ -139,25 +138,15 @@ function M.soft_att_lstm_concat(opt)
     local prev_h = nn.Identity()()
 
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(att_seq)         -- batch * att_size * feat_size
-    local att_h, dot
+    local att = nn.View(-1, feat_size)(att_seq)
+    att = nn.Linear(feat_size, 1)(att)                  -- (batch * att_size) * 1
+    att = nn.View(-1, att_size)(att)                    -- batch * att_size 
 
-    if att_hid_size > 0 then
-        att = nn.Linear(feat_size, att_hid_size)(att)       -- batch * att_size * att_hid_size
-        att_h = nn.Linear(rnn_size, att_hid_size)(prev_h)   -- batch * att_hid_size
-        att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * att_size * att_hid_size
-        dot = nn.CAddTable(){att_h, att}                    -- batch * att_size * att_hid_size
-        dot = nn.Tanh()(dot)                                -- batch * att_size
-        dot = nn.Linear(att_hid_size, 1)(dot)               -- batch * att_size * 1
-        dot = nn.Squeeze()(dot)                             -- batch * att_size
-    else
-        att = nn.Linear(feat_size, 1)(att)                  -- batch * att_size * 1
-        att = nn.Squeeze()(att)                             -- batch * att_size
-        att_h = nn.Linear(rnn_size, 1)(prev_h)              -- batch * 1
-        att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * att_size * 1
-        att_h = nn.Squeeze()(att_h)                         -- batch * att_size
-        dot = nn.CAddTable(){att_h, att}
+    local att_h = nn.Linear(rnn_size, 1)(prev_h)        -- mapping hidden state to 1, batch * 1
+    att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * 1 -> batch * att_size * 1
+    att_h = nn.Squeeze()(att_h)                         -- batch * att_size
     
+    local dot = nn.CAddTable()({att_h, att})            -- add hidden and feature
     local weight = nn.SoftMax()(dot)
         
     local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
