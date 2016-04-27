@@ -92,7 +92,7 @@ function M.soft_att_lstm_2(opt)
     local att = nn.MixtureTable(3){weight, att_seq_t}          -- batch * feat_size <- (batch * att_size, batch * rnn_size * att_size)
     
     --- Input to LSTM
-    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att)    -- batch * (4*rnn_size) <- batch * rnn_size
+    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att)    -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
     local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
@@ -123,9 +123,8 @@ function M.soft_att_lstm_2(opt)
 end
 
 
-
-
-function M.lstm(opt)
+-- Attention model, concat hidden and image feature
+function M.soft_att_lstm_concat(opt)
     -- Model parameters
     local feat_size = opt.feat_size
     local att_size = opt.att_size
@@ -134,14 +133,39 @@ function M.lstm(opt)
     local input_size = opt.emb_size
 
     local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
+    local att_seq = nn.Identity()()   -- batch * att_size * feat_size -- the image patches
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
+
+    ------------ Attention part --------------------
+    local att = nn.View(-1, feat_size)(att_seq)
+    att = nn.Linear(feat_size, 1)(att)                  -- (batch * att_size) * 1
+    att = nn.View(-1, att_size)(att)                    -- batch * att_size 
+
+    local att_h = nn.Linear(rnn_size, 1)(prev_h)        -- mapping hidden state to 1, batch * 1
+    att_h = nn.Replicate(att_size, 2)(att_h)            -- batch * 1 -> batch * att_size * 1
+    att_h = nn.Squeeze()(att_h)                         -- batch * att_size
+    
+    local dot = nn.CAddTable()({att_h, att})            -- add hidden and feature
+    local weight = nn.SoftMax()(dot)
+        
+    local att_t = nn.Transpose({2, 3})(att)             -- batch * rnn_size * att_size
+    att = nn.MixtureTable(3){weight, att_t}             -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
+    
+    -------------- End of attention part -----------
+    
+    --- Input to LSTM
+    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att) -- batch * (4*rnn_size) <- batch * rnn_size
 
     ------------- LSTM main part --------------------
     local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
     local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
+    
+    -- test
+    -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
+    -- local all_input_sums = nn.CAddTable()({prev_all_input_sums, att_add})
 
-    local all_input_sums = nn.CAddTable()({i2h, h2h})
+    local all_input_sums = nn.CAddTable()({i2h, h2h, att_add})
 
     local sigmoid_chunk = nn.Narrow(2, 1, 3 * rnn_size)(all_input_sums)
     sigmoid_chunk = nn.Sigmoid()(sigmoid_chunk)
@@ -158,9 +182,8 @@ function M.lstm(opt)
     })
     local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
     
-    return nn.gModule({x, prev_c, prev_h}, {next_c, next_h})
+    return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
 end
-
 
 -------------------------------------
 -- Train the model for an epoch
@@ -391,7 +414,9 @@ function M.create_model(opt)
     local model = {}
     model.emb = nn.LookupTable(opt.word_cnt, opt.emb_size)
     -- model.soft_att_lstm = opt.use_attention and M.soft_att_lstm(opt) or M.lstm(opt)
-    model.soft_att_lstm = opt.use_attention and M.soft_att_lstm_2(opt) or M.lstm(opt)    -- new attention 
+    -- model.soft_att_lstm = opt.use_attention and M.soft_att_lstm_2(opt) or M.lstm(opt)    -- new attention 
+    model.soft_att_lstm = opt.use_attention and M.soft_att_lstm_concat(opt) or M.lstm(opt)
+    
     
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
     model.criterion = nn.ClassNLLCriterion()
