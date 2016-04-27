@@ -25,7 +25,7 @@ function M.parse(arg)
     cmd:option('-val_fc7', 'val2014_features_vgg_vd19_fc7', 'Path to pre-extracted validation fully connected 7')
     cmd:option('-train_anno', 'annotations/captions_train2014.json', 'Path to training image annotaion file')
     cmd:option('-val_anno', 'annotations/captions_val2014.json', 'Path to validation image annotaion file')
-    cmd:option('-nGPU', 1, 'Index of GPU to use, 0 means CPU')
+    cmd:option('-nGPU', 2, 'Index of GPU to use, 0 means CPU')
     cmd:option('-seed', 123, 'Random number seed')
 
     ------------ Training options --------------------
