@@ -117,7 +117,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     if opt.lstm_size ~= opt.fc7_size then
         params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.linear)
     else
-        model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
+        params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
     end
     local clones = {}
     anno_utils = dataloader.anno_utils
