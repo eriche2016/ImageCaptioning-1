@@ -49,7 +49,12 @@ function M.soft_att_lstm(opt)
     -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
     -- local all_input_sums = nn.CAddTable()({prev_all_input_sums, att_add})
 
-    local all_input_sums = nn.CAddTable()({i2h, h2h, att_add})
+    local all_input_sums
+    if opt.use_attention then
+        all_input_sums = nn.CAddTable()({i2h, h2h, att_add})
+    else
+        all_input_sums = nn.CAddTable(){i2h, h2h}
+    end
 
     local sigmoid_chunk = nn.Narrow(2, 1, 3 * rnn_size)(all_input_sums)
     sigmoid_chunk = nn.Sigmoid()(sigmoid_chunk)
@@ -65,7 +70,7 @@ function M.soft_att_lstm(opt)
         nn.CMulTable()({in_gate,     in_transform})
     })
     local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
-      
+    
     return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
     
 end
@@ -175,13 +180,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     --- end of feval
 
     local function comp_error(batches)
-        local loss = 0; local inst_cnt = 0
-        for j = 1, #batches do
+        local loss = 0
+        for j = 1, opt.max_eval_batch do
+            if j > #batches then break end
             att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[j])
             local t_loss, _ = feval(params, false)
             loss = loss + t_loss
             inst_cnt = inst_cnt + input_text:size()[1]
-            if inst_cnt >= opt.max_eval_inst then break end
         end
         return loss
     end
