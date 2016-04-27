@@ -149,13 +149,13 @@ function M.soft_att_lstm_concat(opt)
     local dot = nn.CAddTable()({att_h, att})            -- add hidden and feature
     local weight = nn.SoftMax()(dot)
         
-    local att_t = nn.Transpose({2, 3})(att)             -- batch * rnn_size * att_size
-    att = nn.MixtureTable(3){weight, att_t}             -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
+    local att_res = nn.MixtureTable(3){weight, att_seq_t}         -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
     
     -------------- End of attention part -----------
     
     --- Input to LSTM
-    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att) -- batch * (4*rnn_size) <- batch * rnn_size
+    local att_add = nn.Linear(rnn_size, 4 * rnn_size)(att_res) -- batch * (4*rnn_size) <- batch * rnn_size
 
     ------------- LSTM main part --------------------
     local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
