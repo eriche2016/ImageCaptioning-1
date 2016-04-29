@@ -42,7 +42,11 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
     cmd:option('-save_file', true, 'whether save model file?')
     cmd:option('-save_file_name', 'attention.1024.model', 'file name for saving model')
-
+    
+    ------------ Evaluation options --------------------
+    cmd:option('-model', 'models/concat.1024.512.model', 'Model to evaluate')
+    cmd:option('-beam_size', 5, 'Beam size in beam search')
+    
     local opt = cmd:parse(arg or {})
     opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
     opt.loss_period = math.floor(600 * 32 / opt.batch_size)
