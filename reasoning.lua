@@ -325,6 +325,7 @@ end
 -- Eval the model
 -------------------------
 function M.language_eval(predictions, id)
+    print('using reasoning')
     local out_struct = {val_predictions = predictions}
     eval_utils.write_json('eval/neuraltalk2/coco-caption/val' .. id .. '.json', out_struct) -- serialize to json (ew, so gross)
     os.execute('./eval/neuraltalk2/misc/call_python_caption_eval.sh val' .. id .. '.json')
