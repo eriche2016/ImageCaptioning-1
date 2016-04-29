@@ -12,7 +12,7 @@ cutorch.setDevice(opt.nGPU)
 torch.manualSeed(opt.seed)
 
 local model_pack = opt.use_reasoning and 'soft_att_lstm' or 'reasoning'
-local M = require model_pack
+local M = require(model_pack)
 
 -- Initialize dataloader
 local dataloader = DataLoader(opt)
