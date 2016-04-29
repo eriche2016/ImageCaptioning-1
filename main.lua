@@ -3,7 +3,6 @@ require 'nngraph'
 require 'torch'
 require 'cutorch'
 local DataLoader = require 'dataloader'
-local M = require 'soft_att_lstm'
 
 torch.setdefaulttensortype('torch.FloatTensor')
 local opts = require 'opts'
@@ -11,6 +10,8 @@ local opt = opts.parse(arg)
 print(opt)
 cutorch.setDevice(opt.nGPU)
 torch.manualSeed(opt.seed)
+
+local M = opt.use_reasoning and require 'soft_att_lstm' or require 'reasoning'
 
 -- Initialize dataloader
 local dataloader = DataLoader(opt)

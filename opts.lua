@@ -20,6 +20,9 @@ function M.parse(arg)
 
     cmd:option('-use_attention', true, 'Use attention or not')
 
+    cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
+    cmd:option('-reason_step', 5, 'Reasoning steps before the decoder')
+
     ------------ General options --------------------
     cmd:option('-data', 'data/', 'Path to dataset')
     cmd:option('-train_feat', 'train2014_features_vgg_vd19_conv5', 'Path to pre-extracted training image feature')
