@@ -249,7 +249,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
                     lstm_c[0] = reason_c[reason_len]
                     lstm_h[0] = reason_h[reason_len]
-                    max_pred[1] = torch.CudaTensor(att_seq:size[1]):fill(anno_utils.START_NUM)
+                    max_pred[1] = torch.CudaTensor(att_seq:size()[1]):fill(anno_utils.START_NUM)
 
                     for t = 1, seq_len do
                         embeddings[t] = clones.emb[t]:forward(max_pred[t])
