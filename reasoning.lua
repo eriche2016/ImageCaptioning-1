@@ -238,7 +238,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                     att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
 
-                    local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
+                    local zero_tensor = torch.zeros(att_seq:size()[1], opt.lstm_size):cuda()
                     local reason_c = {[0] = zero_tensor}
                     local reason_h = {[0] = zero_tensor}
                     local embeddings, lstm_c, lstm_h, predictions, max_pred = {}, {}, {}, {}, {}
