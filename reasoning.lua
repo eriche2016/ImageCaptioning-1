@@ -165,6 +165,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for t = 1, reason_len do
             reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
                 forward{fc7_images, att_seq, reason_c[t - 1], reason_h[t - 1]})
+        end
 
         lstm_c[0] = reason_c[reason_len]
         lstm_h[0] = reason_h[reason_len]
@@ -246,6 +247,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     for t = 1, reason_len do
                         reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
                             forward{fc7_images, att_seq, reason_c[t - 1], reason_h[t - 1]})
+                    end
 
                     lstm_c[0] = reason_c[reason_len]
                     lstm_h[0] = reason_h[reason_len]
