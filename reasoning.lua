@@ -179,7 +179,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
 
         if update then
-            local embeddings, dlstm_c, dlstm_h, dreason_c, dreason_h = {}, {}, {}, {}, {}
+            local dembeddings, dlstm_c, dlstm_h, dreason_c, dreason_h = {}, {}, {}, {}, {}
             dlstm_c[seq_len] = zero_tensor:clone()
             dlstm_h[seq_len] = zero_tensor:clone()
 
