@@ -139,7 +139,7 @@ function utils.read_captions(filenames, test)
         local annos = json.decode(text)['annotations']
         
         for _, anno in ipairs(annos) do 
-            local id, caption = anno['image_id'], anno['caption']:lower()
+            local id, caption, ann_id = anno['image_id'], anno['caption']:lower(), anno['id']
             caption = caption:gsub('[^%a%s]', ''):gsub('%s+', ' ')
             local seq = utils.mysplit(caption, ' ')
             
@@ -162,7 +162,7 @@ function utils.read_captions(filenames, test)
             if id2captions[id] == nil then
                 id2captions[id] = {}
             end
-            table.insert(id2captions[id], caption)
+            table.insert(id2captions[id], {ann_id, caption})
             
         end
     
@@ -229,7 +229,7 @@ end
 function utils.gen_len2captions(ids, id2captions)
     local len2captions = {}
     for id_k, id in pairs(ids) do
-        for cap_k, caption in pairs(id2captions[id]) do
+        for cap_k, caption_ in pairs(id2captions[id]) do
             -- here caption is a table
 -- [[
 --             local seq = mysplit(caption, ' ')
@@ -247,13 +247,15 @@ function utils.gen_len2captions(ids, id2captions)
 --                 end
 --             end
 -- ]]
+
+            local ann_id, caption = unpack(caption_)
             local len = tablex.size(caption)
             
             if len2captions[len] == nil then
                 len2captions[len] = {}
             end
             
-            table.insert(len2captions[len], {id, caption})
+            table.insert(len2captions[len], {id, ann_id, caption})
             
         end
     end
