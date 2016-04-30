@@ -16,14 +16,14 @@ for filename in [TRAIN_FILE, VAL_FILE]:
     for anno in data['annotations']:
         if i % 1000 == 0:
             print 'tagging {}'.format(i)
-        id, caption = anno['image_id'], anno['caption'].lower()
+        id, caption, ann_id = anno['image_id'], anno['caption'].lower(), anno['id']
         caption = regex.sub('', caption)
         nouns = []
         for word, tag in nltk.pos_tag(caption.split()):
             if tag in ['NN', 'NNS']:
                 nouns.append(word)
-        fout.write("{} {}\n".format(id, " ".join(reversed(nouns))))
+        fout.write("{} {} {}\n".format(ann_id, id, " ".join(reversed(nouns))))
         if i % 1000 == 0:
-            print " ".join(reversed(nouns))
+            print ann_id, id, " ".join(reversed(nouns))
         i += 1
 fout.close()
