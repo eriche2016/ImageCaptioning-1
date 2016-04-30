@@ -76,8 +76,8 @@ end
 function DataLoader:gen_train_data(batch)
     -- local images = torch.CudaTensor(#batch, 512, 14, 14)
     local images = torch.CudaTensor(#batch, self.att_size, self.feat_size)
-    local input_text = torch.CudaTensor(#batch, #batch[1][2] + 1)
-    local output_text = torch.CudaTensor(#batch, #batch[1][2] + 1)
+    local input_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
+    local output_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
     for i = 1, #batch do
         -- caption = {id, caption}
