@@ -8,7 +8,7 @@ VAL_FILE = 'data/annotations/captions_val2014.json'
 
 regex = re.compile('[^a-zA-Z\s]')
 
-fout = open('data/annotations/id2nouns.txt')
+fout = open('data/annotations/id2nouns.txt', 'w')
 
 i = 0
 for filename in [TRAIN_FILE, VAL_FILE]:
