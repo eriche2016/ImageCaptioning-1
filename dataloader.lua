@@ -81,7 +81,7 @@ function DataLoader:gen_train_data(batch)
     local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
     for i = 1, #batch do
         -- caption = {id, caption}
-        local id, caption = batch[i][1], batch[i][2]
+        local id, ann_id, caption = batch[i][1], batch[i][2], batch[i][3]
         -- local file = files[id2index[id]]
         local file = self.id2file[id]
         local fc7_file = self.id2fc7_file[id]
