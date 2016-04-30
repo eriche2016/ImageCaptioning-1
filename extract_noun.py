@@ -14,9 +14,8 @@ i = 0
 for filename in [TRAIN_FILE, VAL_FILE]:
     data = json.load(open(filename))
     for anno in data['annotations']:
-        if i % 10000 == 0:
+        if i % 1000 == 0:
             print 'tagging {}'.format(i)
-        i += 1
         id, caption = anno['image_id'], anno['caption'].lower()
         caption = regex.sub('', caption)
         nouns = []
@@ -24,6 +23,7 @@ for filename in [TRAIN_FILE, VAL_FILE]:
             if tag in ['NN', 'NNS']:
                 nouns.append(word)
         fout.write("{} {}\n".format(id, " ".join(reversed(nouns))))
-        if i % 10000 == 0:
+        if i % 1000 == 0:
             print " ".join(reversed(nouns))
+        i += 1
 fout.close()
