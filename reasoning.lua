@@ -253,8 +253,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
         end
         if RESIDUAL then
-            reason_c[reason_len]:add(fc7_images)
-            reason_h[reason_len]:add(fc7_images)
+            reason_c[reason_len]:add(image_map)
+            reason_h[reason_len]:add(image_map)
         end
 
         lstm_c[0] = reason_c[reason_len]
@@ -346,8 +346,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                             forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
                     end
                     if RESIDUAL then
-                        reason_c[reason_len]:add(fc7_images)
-                        reason_h[reason_len]:add(fc7_images)
+                        reason_c[reason_len]:add(image_map)
+                        reason_h[reason_len]:add(image_map)
                     end
 
                     lstm_c[0] = reason_c[reason_len]
