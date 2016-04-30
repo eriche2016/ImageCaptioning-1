@@ -202,6 +202,7 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
+    local RESIDUAL = true
     local params, grad_params
     if opt.lstm_size ~= opt.fc7_size then
         params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear)
@@ -250,6 +251,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for t = 1, reason_len do
             reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
                 forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
+        end
+        if RESIDUAL then
+            reason_c[reason_len]:add(fc7_images)
+            reason_h[reason_len]:add(fc7_images)
         end
 
         lstm_c[0] = reason_c[reason_len]
@@ -339,6 +344,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     for t = 1, reason_len do
                         reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
                             forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
+                    end
+                    if RESIDUAL then
+                        reason_c[reason_len]:add(fc7_images)
+                        reason_h[reason_len]:add(fc7_images)
                     end
 
                     lstm_c[0] = reason_c[reason_len]
