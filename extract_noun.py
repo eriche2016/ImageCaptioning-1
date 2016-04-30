@@ -17,7 +17,7 @@ for filename in [TRAIN_FILE, VAL_FILE]:
         if i % 10000 == 0:
             print 'tagging {}'.format(i)
         i += 1
-        id, caption = anno['image_id'], anno['caption']:lower()
+        id, caption = anno['image_id'], anno['caption'].lower()
         caption = regex.sub('', caption)
         nouns = []
         for word, tag in nltk.pos_tag(caption.split()):
