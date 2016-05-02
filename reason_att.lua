@@ -287,7 +287,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
-                if t > 0 then dreason_h[t - 1]:add(dreason_h_att:select(2, t - 1)) end
+                if t > 1 then dreason_h[t - 1]:add(dreason_h_att:select(2, t - 1)) end
             end
         end
         
