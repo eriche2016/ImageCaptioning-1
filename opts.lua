@@ -19,6 +19,7 @@ function M.parse(arg)
     cmd:option('-test_size', 4000, 'Test set size')
 
     cmd:option('-use_attention', true, 'Use attention or not')
+    cmd:option('-use_noun', true, 'Use noun or not')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
     cmd:option('-model_pack', 'reason_att', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
@@ -34,6 +35,8 @@ function M.parse(arg)
     cmd:option('-val_anno', 'annotations/captions_val2014.json', 'Path to validation image annotaion file')
     cmd:option('-nGPU', 1, 'Index of GPU to use, 0 means CPU')
     cmd:option('-seed', 123, 'Random number seed')
+
+    cmd:option('-id2noun_file', 'data/annotations/id2nouns.txt', 'Path to the id 2 nouns file')
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')

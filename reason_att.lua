@@ -204,9 +204,17 @@ end
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local params, grad_params
     if opt.lstm_size ~= opt.fc7_size then
-        params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear)
+        if opt.use_noun then
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear, model.reason_softmax)
+        else    
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear)
+        end
     else
-        params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax)
+        if opt.use_noun then
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.reason_softmax)
+        else    
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax)
+        end
     end
     local clones = {}
     anno_utils = dataloader.anno_utils
@@ -216,14 +224,18 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        if name ~= 'soft_att_lstm' then 
+        if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
     print('cloning reasoning lstm')
-    clones.soft_att_lstm = model_utils.clone_many_times(model.soft_att_lstm, opt.reason_step) 
+    clones.soft_att_lstm = model_utils.clone_many_times(model.soft_att_lstm, opt.reason_step)
+    if opt.use_noun then
+        clones.reason_softmax = model_utils.clone_many_times(model.reason_softmax, opt.reason_step)
+        clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
+    end 
 
-    local att_seq, fc7_images, input_text, output_text
+    local att_seq, fc7_images, input_text, output_text, noun_list
 
     local function feval(params_, update)
         if update == nil then update = true end
@@ -243,7 +255,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local reason_c = {[0] = image_map}
         local reason_h = {[0] = image_map}
         local reason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size)
-        local embeddings, lstm_c, lstm_h, predictions = {}, {}, {}, {}
+        local embeddings, lstm_c, lstm_h, predictions, reason_preds = {}, {}, {}, {}, {}
         local loss = 0
         local seq_len = math.min(input_text:size()[2], max_t)
         local reason_len = opt.reason_step
@@ -252,6 +264,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
                 forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
             reason_h_att:select(2, t):copy(reason_h[t])
+            if opt.use_noun then
+                reason_preds[t] = clones.reason_softmax:forward(reason_h[t])
+                local t_loss = clones.reason_criterion:forward(reason_preds[t], noun_list:select(2, t))
+                if update then loss = loss + t_loss end
+            end
         end
 
         lstm_c[0] = reason_c[reason_len]
@@ -284,6 +301,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             dreason_h[reason_len] = dlstm_h[0]
             dreason_h[reason_len]:add(dreason_h_att:select(2, reason_len))
             for t = reason_len, 1, -1 do
+                if opt.usenou then
+                    local doutput_t = clones.reason_criterion[t]:backward(reason_preds[t], noun_list:select(2, t))
+                    doutput_t = clones.reason_softmax[t]:backward(reason_h[t])
+                    dreason_h[t]:add(doutput_t)
+                end
                 _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
@@ -415,6 +437,10 @@ function M.create_model(opt)
     if opt.fc7_size ~= opt.lstm_size then
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
+    if opt.use_noun then
+        model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
+        model.reason_criterion = nn.ClassNLLCriterion()
+    end
     
     if opt.nGPU > 0 then
         model.emb:cuda()
@@ -424,6 +450,9 @@ function M.create_model(opt)
         model.criterion:cuda()
         if opt.fc7_size ~= opt.lstm_size then
             model.linear:cuda()
+        end
+        if opt.use_noun then
+            model.reason_softmax:cuda()
         end
     end
     return model
