@@ -48,7 +48,9 @@ function M.parse(arg)
     
     ------------ Evaluation options --------------------
     cmd:option('-model', 'models/concat.1024.512.model', 'Model to evaluate')
+    cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
     cmd:option('-beam_size', 5, 'Beam size in beam search')
+    cmd:option('-val_max_len', 20, 'Max length in validation state')
     
     local opt = cmd:parse(arg or {})
     opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
