@@ -90,7 +90,7 @@ function M.soft_att_lstm_concat(opt)
     local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * feat_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
-    -- -------------- End of attention part -----------
+    -------------- End of attention part -----------
     
     -- --- Input to LSTM
     -- local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
@@ -262,7 +262,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))
             -- lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
             --     forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
-            clones.lstm[t]:forward{reason_h_att, lstm_h[t - 1]}
+            local temp = clones.lstm[t]:forward{reason_h_att, lstm_h[t - 1]}
+            print(temp:size())
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])
             loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))
         end
