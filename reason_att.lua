@@ -59,7 +59,7 @@ function M.soft_att_lstm_concat(opt)
 
     local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
     local att_seq = nn.Identity()()   -- batch * att_size * feat_size -- the image patches
-    -- local prev_c = nn.Identity()()
+    local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
     ------------ Attention part --------------------
@@ -121,7 +121,7 @@ function M.soft_att_lstm_concat(opt)
     -- local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
     
     -- return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
-    return nn.gModule({x, att_seq, prev_h}, {att_res})
+    return nn.gModule({att_seq, prev_h}, {att_res})
 end
 
 -- Attention model, concat hidden and image feature
@@ -262,7 +262,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))
             -- lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
             --     forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
-            clones.lstm[t]:forward{embeddings[t], reason_h_att, lstm_h[t - 1]}
+            clones.lstm[t]:forward{reason_h_att, lstm_h[t - 1]}
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])
             loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))
         end
