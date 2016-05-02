@@ -106,8 +106,7 @@ function DataLoader:gen_train_data(batch)
             end
         end
     end
-    if self.use_noun then return images, fc7_images, input_text, output_text, noun_list end
-    return images, fc7_images, input_text, output_text
+    return images, fc7_images, input_text, output_text, noun_list
 end
 
 function DataLoader:gen_test_data(j1, j2)

@@ -322,7 +322,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local loss = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
-            att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[j])
+            att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[j])
             local t_loss, _ = feval(params, false)
             loss = loss + t_loss
         end
@@ -333,7 +333,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for epoch = 1, opt.nEpochs do
         local index = torch.randperm(#batches)
         for i = 1, #batches do
-            att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
+            att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[index[i]])
             optim.adagrad(feval, params, optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
