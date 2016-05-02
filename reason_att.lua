@@ -87,8 +87,8 @@ function M.soft_att_lstm_concat(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
-    local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * feat_size * att_size
+    local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
     -------------- End of attention part -----------
     
@@ -259,6 +259,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         for t = 1, seq_len do
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))
+            print(embeddings[t]:size(), reason_h_att:size(), lstm_c[t - 1]:size(), lstm_h[t - 1]:size())
             lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
                 forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])
