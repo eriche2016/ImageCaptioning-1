@@ -155,7 +155,8 @@ function utils.read_captions(filenames, test)
                 if word2index[word] ~= nil then
                     table.insert(caption, word2index[word])
                 else
-                    table.insert(caption, UNK_NUM)
+                    -- table.insert(caption, UNK_NUM)
+                    table.insert(caption, utils.UNK_NUM)
                 end        
             end
             
@@ -177,6 +178,23 @@ function utils.read_captions(filenames, test)
     return id2captions, word2index, index2word, word_cnt
 end
 
+function utils.read_nouns(filename, word2index)
+    local id2noun = {}
+    for line in io.open(filename):lines() do
+        local input = utils.mysplit(line)
+        local ann_id = tonumber(input[1])
+        id2noun[ann_id] = {}
+        for i = 3, #input do
+            local noun = input[i]
+            if word2index[noun] ~= nil then
+                table.insert(id2noun[ann_id], word2index[noun])
+            else
+                table.insert(id2noun[ann_id], utils.UNK_NUM)
+            end
+        end
+    end
+    return id2noun
+end
 
 ------------------------------------------------------
 -- split images into train, val and test 
