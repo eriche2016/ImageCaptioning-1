@@ -267,23 +267,27 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         if update then
             local dembeddings, dlstm_c, dlstm_h, dreason_c, dreason_h = {}, {}, {}, {}, {}
+            local dreason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size):zero()
             dlstm_c[seq_len] = zero_tensor:clone()
             dlstm_h[seq_len] = zero_tensor:clone()
 
             for t = seq_len, 1, -1 do
                 local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))
                 dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))
-                dembeddings[t], dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.lstm[t]:
+                dembeddings[t], doutput_t, dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.lstm[t]:
                     backward({embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]},
                     {dlstm_c[t], dlstm_h[t]}))
+                dreason_h_att:add(doutput_t)
                 clones.emb[t]:backward(input_text:select(2, t), dembeddings[t])
             end
             dreason_c[reason_len] = dlstm_c[0]
             dreason_h[reason_len] = dlstm_h[0]
+            dreason_h[reason_len]:add(dreason_h_att:select(2, reason_len))
             for t = reason_len, 1, -1 do
                 _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
+                dreason_h[t - 1]:add(dreason_h_att:select(2, t - 1))
             end
         end
         
