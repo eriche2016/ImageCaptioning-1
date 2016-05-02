@@ -22,8 +22,8 @@ for filename in [TRAIN_FILE, VAL_FILE]:
         for word, tag in nltk.pos_tag(caption.split()):
             if tag in ['NN', 'NNS']:
                 nouns.append(word)
-        fout.write("{} {} {}\n".format(ann_id, id, " ".join(reversed(nouns))))
+        fout.write("{} {} {}\n".format(ann_id, id, " ".join(nouns)))
         if i % 1000 == 0:
-            print ann_id, id, " ".join(reversed(nouns))
+            print ann_id, id, " ".join(nouns)
         i += 1
 fout.close()
