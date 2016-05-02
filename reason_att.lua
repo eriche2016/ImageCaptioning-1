@@ -59,7 +59,7 @@ function M.soft_att_lstm_concat(opt)
 
     local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
     local att_seq = nn.Identity()()   -- batch * att_size * feat_size -- the image patches
-    local prev_c = nn.Identity()()
+    -- local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
     ------------ Attention part --------------------
