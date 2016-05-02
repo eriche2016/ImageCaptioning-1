@@ -100,6 +100,7 @@ function DataLoader:gen_train_data(batch)
         input_text[i][1] = anno_utils.START_NUM
         output_text[i][#caption + 1] = anno_utils.STOP_NUM
         if self.use_noun then
+            noun_list:fill(anno_utils.UNK_NUM)
             for j, noun_id in ipairs(self.annid2nouns[ann_id]) do
                 if j > self.reason_step then break end
                 noun_list[i][j] = noun_id
