@@ -266,7 +266,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             reason_h_att:select(2, t):copy(reason_h[t])
             if opt.use_noun then
                 reason_preds[t] = clones.reason_softmax[t]:forward(reason_h[t])
-                print(reason_preds[t]:size(), noun_list:select(2, t):size())
                 local t_loss = clones.reason_criterion[t]:forward(reason_preds[t], noun_list:select(2, t))
                 if update then loss = loss + t_loss end
             end
@@ -454,6 +453,7 @@ function M.create_model(opt)
         end
         if opt.use_noun then
             model.reason_softmax:cuda()
+            model.reason_criterion:cuda()
         end
     end
     return model
