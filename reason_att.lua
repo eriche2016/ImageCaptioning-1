@@ -54,7 +54,7 @@ function M.soft_att_lstm_concat(opt)
     local feat_size = opt.lstm_size
     local att_size = opt.reason_step
     local rnn_size = opt.lstm_size
-    local input_size = opt.fc7_size
+    local input_size = opt.emb_size
     local att_hid_size = opt.att_hid_size
 
     local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
@@ -90,38 +90,37 @@ function M.soft_att_lstm_concat(opt)
     local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * feat_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
-    -------------- End of attention part -----------
+    ------------ End of attention part -----------
     
-    -- --- Input to LSTM
-    -- local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
+    --- Input to LSTM
+    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
-    -- ------------- LSTM main part --------------------
-    -- local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
-    -- local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
+    ------------- LSTM main part --------------------
+    local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
+    local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
-    -- -- test
-    -- -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
-    -- -- local all_input_sums = nn.CAddTable()({prev_all_input_sums, att_add})
+    -- test
+    -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
+    -- local all_input_sums = nn.CAddTable()({prev_all_input_sums, att_add})
 
-    -- local all_input_sums = nn.CAddTable()({i2h, h2h, att_add})
+    local all_input_sums = nn.CAddTable()({i2h, h2h, att_add})
 
-    -- local sigmoid_chunk = nn.Narrow(2, 1, 3 * rnn_size)(all_input_sums)
-    -- sigmoid_chunk = nn.Sigmoid()(sigmoid_chunk)
-    -- local in_gate = nn.Narrow(2, 1, rnn_size)(sigmoid_chunk)
-    -- local forget_gate = nn.Narrow(2, rnn_size + 1, rnn_size)(sigmoid_chunk)
-    -- local out_gate = nn.Narrow(2, 2 * rnn_size + 1, rnn_size)(sigmoid_chunk)
+    local sigmoid_chunk = nn.Narrow(2, 1, 3 * rnn_size)(all_input_sums)
+    sigmoid_chunk = nn.Sigmoid()(sigmoid_chunk)
+    local in_gate = nn.Narrow(2, 1, rnn_size)(sigmoid_chunk)
+    local forget_gate = nn.Narrow(2, rnn_size + 1, rnn_size)(sigmoid_chunk)
+    local out_gate = nn.Narrow(2, 2 * rnn_size + 1, rnn_size)(sigmoid_chunk)
 
-    -- local in_transform = nn.Narrow(2, 3 * rnn_size + 1, rnn_size)(all_input_sums)
-    -- in_transform = nn.Tanh()(in_transform)
+    local in_transform = nn.Narrow(2, 3 * rnn_size + 1, rnn_size)(all_input_sums)
+    in_transform = nn.Tanh()(in_transform)
 
-    -- local next_c = nn.CAddTable()({
-    --     nn.CMulTable()({forget_gate, prev_c}),
-    --     nn.CMulTable()({in_gate,     in_transform})
-    -- })
-    -- local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
+    local next_c = nn.CAddTable()({
+        nn.CMulTable()({forget_gate, prev_c}),
+        nn.CMulTable()({in_gate,     in_transform})
+    })
+    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
     
-    -- return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
-    return nn.gModule({att_seq, prev_h}, {att_res})
+    return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
 end
 
 -- Attention model, concat hidden and image feature
@@ -260,10 +259,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         for t = 1, seq_len do
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))
-            -- lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
-            --     forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
-            local temp = clones.lstm[t]:forward{reason_h_att, lstm_h[t - 1]}
-            print(temp:size())
+            lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
+                forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])
             loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))
         end
