@@ -313,16 +313,15 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             end
             dreason_c[reason_len] = dlstm_c[0]
             dreason_h[reason_len] = dlstm_h[0]
-            dreason_h[reason_len]:add(dreason_h_att:select(2, reason_len))
             for t = reason_len, 1, -1 do
                 if opt.use_noun then
                     local doutput_t = clones.reason_softmax[t]:backward(reason_h[t], dreason_pred:select(2, t))
                     dreason_h[t]:add(doutput_t)
                 end
+                dreason_h[t]:add(dreason_h_att:select(2, t))
                 _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
-                if t > 1 then dreason_h[t - 1]:add(dreason_h_att:select(2, t - 1)) end
             end
         end
         
