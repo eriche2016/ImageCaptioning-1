@@ -12,6 +12,7 @@ local utils = {}
 utils.START_NUM = 1
 utils.STOP_NUM = 2
 utils.UNK_NUM = 3
+utils.NUM = 3
 
 -----------------------------------------------------
 -- conunt element number of a table

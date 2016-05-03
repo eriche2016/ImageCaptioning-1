@@ -24,13 +24,14 @@ function DataLoader:__init(opt)
 
     self.anno_utils = anno_utils
     self.use_noun = opt.use_noun
+    self.truncate = opt.truncate
 
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
     self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')
     self.id2captions, self.word2index, self.index2word, self.word_cnt = anno_utils.read_captions(self.anno_dirs, nil)
 
-    self.annid2nouns = anno_utils.read_nouns(opt.id2noun_file, self.word2index)
+    -- self.annid2nouns = anno_utils.read_nouns(opt.id2noun_file, self.word2index)
 
     print('Dataset summary:')
     print('id2file size: ' .. tablex.size(self.id2file))
@@ -83,7 +84,7 @@ function DataLoader:gen_train_data(batch)
     local input_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local output_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
-    local noun_list = self.use_noun and torch.CudaTensor(#batch, self.reason_step) or nil
+    local noun_list = self.use_noun and torch.CudaTensor(#batch, self.truncate):zero() or nil
     for i = 1, #batch do
         -- caption = {id, caption}
         local id, ann_id, caption = batch[i][1], batch[i][2], batch[i][3]
@@ -93,17 +94,22 @@ function DataLoader:gen_train_data(batch)
         -- from 512*14*14
         images[i]:copy(torch.load(file):reshape(self.feat_size, self.att_size):transpose(1, 2))
         fc7_images[i]:copy(torch.load(fc7_file))
+        local word_dict = {}
         for j = 1, #caption do
             input_text[i][j + 1] = caption[j]
             output_text[i][j] = caption[j]
+            word_dict[caption[j]] = true
         end
         input_text[i][1] = anno_utils.START_NUM
         output_text[i][#caption + 1] = anno_utils.STOP_NUM
         if self.use_noun then
-            noun_list:fill(anno_utils.UNK_NUM)
-            for j, noun_id in ipairs(self.annid2nouns[ann_id]) do
-                if j > self.reason_step then break end
-                noun_list[i][j] = noun_id
+            local ind = 1
+            for k, _ in pairs(word_dict) do
+                if k > anno_utils.NUM then
+                    noun_list[i][ind] = k
+                    ind = ind + 1
+                    if ind > self.truncate then break end
+                end
             end
         end
     end

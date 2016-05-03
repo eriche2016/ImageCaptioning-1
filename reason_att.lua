@@ -205,13 +205,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local params, grad_params
     if opt.lstm_size ~= opt.fc7_size then
         if opt.use_noun then
-            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear, model.reason_softmax)
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear, model.reason_softmax, model.pooling)
         else    
             params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear)
         end
     else
         if opt.use_noun then
-            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.reason_softmax)
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.reason_softmax, model.pooling)
         else    
             params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax)
         end
@@ -224,7 +224,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion' then 
+        if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion'
+            and name ~= 'pooling' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
@@ -232,7 +233,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     clones.soft_att_lstm = model_utils.clone_many_times(model.soft_att_lstm, opt.reason_step)
     if opt.use_noun then
         clones.reason_softmax = model_utils.clone_many_times(model.reason_softmax, opt.reason_step)
-        clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
+        -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
     end 
 
     local att_seq, fc7_images, input_text, output_text, noun_list
@@ -256,6 +257,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local reason_h = {[0] = image_map}
         local reason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size)
         local embeddings, lstm_c, lstm_h, predictions, reason_preds = {}, {}, {}, {}, {}
+        local reason_pred_mat = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.word_cnt)
         local loss = 0
         local seq_len = math.min(input_text:size()[2], max_t)
         local reason_len = opt.reason_step
@@ -266,9 +268,15 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             reason_h_att:select(2, t):copy(reason_h[t])
             if opt.use_noun then
                 reason_preds[t] = clones.reason_softmax[t]:forward(reason_h[t])
-                local t_loss = clones.reason_criterion[t]:forward(reason_preds[t], noun_list:select(2, t))
-                if update then loss = loss + t_loss end
+                reason_pred_mat:select(2, t):copy(reason_preds[t])
             end
+        end
+
+        local reason_pool
+        if opt.use_noun then
+            reason_pool = model.pooling:forward(reason_pred_mat)
+            local t_loss = model.reason_criterion:forward(reason_pool, noun_list)
+            if update then loss = loss + t_loss end
         end
 
         lstm_c[0] = reason_c[reason_len]
@@ -283,6 +291,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
 
         if update then
+            local dreason_pred
+            if opt.use_noun then
+                dreason_pred = model.reason_criterion:backward(reason_pool, noun_list)
+                dreason_pred = model.pooling:backward(reason_pred_mat)
+            end
+
             local dembeddings, dlstm_c, dlstm_h, dreason_c, dreason_h = {}, {}, {}, {}, {}
             local dreason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size):zero()
             dlstm_c[seq_len] = zero_tensor:clone()
@@ -301,9 +315,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             dreason_h[reason_len] = dlstm_h[0]
             dreason_h[reason_len]:add(dreason_h_att:select(2, reason_len))
             for t = reason_len, 1, -1 do
-                if opt.usenou then
-                    local doutput_t = clones.reason_criterion[t]:backward(reason_preds[t], noun_list:select(2, t))
-                    doutput_t = clones.reason_softmax[t]:backward(reason_h[t])
+                if opt.use_noun then
+                    local doutput_t = clones.reason_softmax[t]:backward(reason_h[t], dreason_pred:select(2, t))
                     dreason_h[t]:add(doutput_t)
                 end
                 _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
@@ -438,8 +451,10 @@ function M.create_model(opt)
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
     if opt.use_noun then
-        model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
-        model.reason_criterion = nn.ClassNLLCriterion()
+        -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
+        model.reason_softmax = nn.Linear(opt.lstm_size, opt.word_cnt)
+        model.pooling = nn.Max(2)
+        model.reason_criterion = nn.MultiLabelMarginCriterion()
     end
     
     if opt.nGPU > 0 then
@@ -453,6 +468,7 @@ function M.create_model(opt)
         end
         if opt.use_noun then
             model.reason_softmax:cuda()
+            model.pooling:cuda()
             model.reason_criterion:cuda()
         end
     end
