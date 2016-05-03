@@ -274,8 +274,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         local reason_pool
         if opt.use_noun then
-            reason_pool = model.pooling:forward(reason_pred_mat)
-            print(reason_pool:size(), noun_list:size())
+            reason_pool = model.pooling:forward(reason_pred_mat):float()
             local t_loss = model.reason_criterion:forward(reason_pool, noun_list)
             if update then loss = loss + t_loss end
         end
@@ -294,8 +293,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         if update then
             local dreason_pred
             if opt.use_noun then
-                dreason_pred = model.reason_criterion:backward(reason_pool, noun_list)
-                dreason_pred = model.pooling:backward(reason_pred_mat)
+                dreason_pred = model.reason_criterion:backward(reason_pool, noun_list):cuda()
+                dreason_pred = model.pooling:backward(reason_pred_mat, dreason_pred)
             end
 
             local dembeddings, dlstm_c, dlstm_h, dreason_c, dreason_h = {}, {}, {}, {}, {}
@@ -470,7 +469,7 @@ function M.create_model(opt)
         if opt.use_noun then
             model.reason_softmax:cuda()
             model.pooling:cuda()
-            model.reason_criterion:cuda()
+            -- model.reason_criterion:cuda()
         end
     end
     return model
