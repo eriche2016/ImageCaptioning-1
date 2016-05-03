@@ -84,7 +84,7 @@ function DataLoader:gen_train_data(batch)
     local input_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local output_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
-    local noun_list = self.use_noun and torch.Tensor(#batch, self.truncate):zero() or nil
+    local noun_list = self.use_noun and torch.Tensor(#batch, self.word_cnt):zero() or nil
     for i = 1, #batch do
         -- caption = {id, caption}
         local id, ann_id, caption = batch[i][1], batch[i][2], batch[i][3]
