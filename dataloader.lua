@@ -108,7 +108,6 @@ function DataLoader:gen_train_data(batch)
                 if k > anno_utils.NUM then
                     noun_list[i][ind] = k
                     ind = ind + 1
-                    if ind > self.truncate then break end
                 end
             end
         end
