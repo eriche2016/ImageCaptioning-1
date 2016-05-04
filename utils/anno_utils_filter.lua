@@ -89,6 +89,7 @@ function utils.read_index_split(opt)
     local val_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_val.txt'))
     local test_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_test.txt'))
     return train_set, val_set, test_set
+end
 
 -----------------------------------------------------
 -- generate (image id => filename) pairs
