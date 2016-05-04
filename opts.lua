@@ -24,7 +24,7 @@ function M.parse(arg)
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
     cmd:option('-model_pack', 'reason_att', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
-    cmd:option('-reason_step', 5, 'Reasoning steps before the decoder')
+    cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
     cmd:option('-data', 'data/', 'Path to dataset')

@@ -273,10 +273,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
 
         local reason_pool
+        local loss_2 = 0
         if opt.use_noun then
             reason_pool = model.pooling:forward(reason_pred_mat):float()
             local t_loss = model.reason_criterion:forward(reason_pool, noun_list) * opt.reason_weight
-            if update then loss = loss + t_loss end
+            if update then loss = loss + t_loss else loss_2 = loss_2 + t_loss end
         end
 
         lstm_c[0] = reason_c[reason_len]
@@ -326,19 +327,21 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
         
         grad_params:clamp(-5, 5)
-        return loss, grad_params
+        return loss, update and grad_params or loss_2
     end 
     --- end of feval
 
     local function comp_error(batches)
         local loss = 0
+        local loss_2 = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
             att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[j])
-            local t_loss, _ = feval(params, false)
+            local t_loss, t_loss_2 = feval(params, false)
             loss = loss + t_loss
+            loss_2 = loss_2 + t_loss_2
         end
-        return loss
+        return loss, loss_2
     end
     
     local max_bleu_4 = 0
@@ -350,9 +353,9 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
-                train_loss = comp_error(batches)
-                val_loss = comp_error(val_batches)
-                print(epoch, i, 'train', train_loss, 'val', val_loss)
+                train_loss, train_loss_2 = comp_error(batches)
+                val_loss, val_loss_2 = comp_error(val_batches)
+                print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
                 collectgarbage()
             end
 
