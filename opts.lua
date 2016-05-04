@@ -62,7 +62,7 @@ function M.parse(arg)
     cmd:option('-test_mode', true, 'eval on test set if true')
     
     local opt = cmd:parse(arg or {})
-    opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
+    opt.eval_period = math.floor(3000 * 32 / opt.batch_size) * 2
     opt.loss_period = math.floor(600 * 32 / opt.batch_size)
     return opt
 end
