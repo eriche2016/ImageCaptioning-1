@@ -78,7 +78,6 @@ end
 
 function utils.read_ids(filename)
     local ret = {}
-    print(filename)
     for line in io.open(filename):lines() do
         table.insert(ret, utils.get_image_id(line))
     end

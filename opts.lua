@@ -38,7 +38,7 @@ function M.parse(arg)
     cmd:option('-seed', 123, 'Random number seed')
 
     cmd:option('-id2noun_file', 'data/annotations/id2nouns.txt', 'Path to the id 2 nouns file')
-    cmd:option('-arctic_dir', 'arctic-captions', 'Path to index file')
+    cmd:option('-arctic_dir', 'arctic-captions/splits', 'Path to index file')
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
