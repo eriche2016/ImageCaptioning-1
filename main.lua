@@ -23,7 +23,7 @@ local model
 if opt.load_model then
     model = M.create_model(opt)
 else
-    model = torch.load(opt.load_file_name)
+    model = torch.load('models/' .. opt.load_file_name)
 end
 
 -- Train
