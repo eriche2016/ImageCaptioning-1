@@ -53,6 +53,8 @@ function M.parse(arg)
     cmd:option('-save_file_name', 'attention.1024.model', 'file name for saving model')
     cmd:option('-load_file', false, 'whether load model file?')
     cmd:option('-load_file_name', 'reason.att.8.model')
+
+    cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     
     ------------ Evaluation options --------------------
     cmd:option('-model', 'models/concat.1024.512.model', 'Model to evaluate')
