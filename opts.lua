@@ -20,7 +20,7 @@ function M.parse(arg)
 
     cmd:option('-use_attention', true, 'Use attention or not')
     cmd:option('-use_noun', true, 'Use noun or not')
-    cmd:option('-reason_weight', 1.0, 'weight of reasoning loss')
+    cmd:option('-reason_weight', 10.0, 'weight of reasoning loss')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
     cmd:option('-model_pack', 'reason_att', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
@@ -50,6 +50,8 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
     cmd:option('-save_file', true, 'whether save model file?')
     cmd:option('-save_file_name', 'attention.1024.model', 'file name for saving model')
+    cmd:option('-load_file', false, 'whether load model file?')
+    cmd:option('-load_file_name', 'reason.att.margin.8.w10.model')
     
     ------------ Evaluation options --------------------
     cmd:option('-model', 'models/concat.1024.512.model', 'Model to evaluate')
