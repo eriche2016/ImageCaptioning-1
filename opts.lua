@@ -38,6 +38,7 @@ function M.parse(arg)
     cmd:option('-seed', 123, 'Random number seed')
 
     cmd:option('-id2noun_file', 'data/annotations/id2nouns.txt', 'Path to the id 2 nouns file')
+    cmd:option('-arctic_dir', 'arctic-captions', 'Path to index file')
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
@@ -58,6 +59,7 @@ function M.parse(arg)
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
     cmd:option('-beam_size', 5, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
+    cmd:option('-test_mode', true, 'eval on test set if true')
     
     local opt = cmd:parse(arg or {})
     opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
