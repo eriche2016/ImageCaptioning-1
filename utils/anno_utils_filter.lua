@@ -87,9 +87,9 @@ end
 function utils.read_index_split(opt)
     local train_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_train.txt'))
     local val_rest = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_restval.txt'))
-    for _, id in ipairs(val_rest) do
-        table.insert(train_set, id)
-    end
+    -- for _, id in ipairs(val_rest) do
+    --     table.insert(train_set, id)
+    -- end
     local val_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_val.txt'))
     local test_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_test.txt'))
     return train_set, val_set, test_set
