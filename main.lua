@@ -20,7 +20,7 @@ local dataloader = DataLoader(opt)
 
 -- Create model
 local model
-if opt.load_model then
+if not opt.load_file then
     model = M.create_model(opt)
 else
     model = torch.load('models/' .. opt.load_file_name)
