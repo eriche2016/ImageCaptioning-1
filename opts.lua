@@ -61,6 +61,7 @@ function M.parse(arg)
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
     cmd:option('-beam_size', 5, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
+    
     cmd:option('-test_mode', true, 'eval on test set if true')
     
     local opt = cmd:parse(arg or {})

@@ -203,19 +203,25 @@ end
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local params, grad_params
+    local model_list
     if opt.lstm_size ~= opt.fc7_size then
         if opt.use_noun then
-            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear, model.reason_softmax, model.pooling)
+            -- params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear, model.reason_softmax, model.pooling)
+            model_list = {model.emb, model.lstm, model.softmax, model.linear, model.reason_softmax, model.pooling}
         else    
-            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear)
+            model_list = {model.emb, model.lstm, model.softmax, model.linear}
         end
     else
         if opt.use_noun then
-            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.reason_softmax, model.pooling)
-        else    
-            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax)
+            model_list = {model.emb, model.lstm, model.softmax, model.reason_softmax, model.pooling}
+        else
+            model_list = {model.emb, model.lstm, model.softmax}
         end
     end
+    for t = 1, opt.reason_step do
+        table.insert(model_list, model.soft_att_lstm[t])
+    end
+    params, grad_params = model_utils.combine_all_parameters(unpack(model_list))
     local clones = {}
     anno_utils = dataloader.anno_utils
     
