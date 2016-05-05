@@ -18,7 +18,7 @@ torch.manualSeed(opt.seed)
 local dataloader = DataLoader(opt)
 
 -- Load model
-local model = torch.load(opt.model)
+local model = torch.load('models/' .. opt.model)
 
 function idx2coord(k, n)
     local i = math.floor((k-1)/n) + 1
