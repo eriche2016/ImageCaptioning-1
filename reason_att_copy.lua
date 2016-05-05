@@ -455,7 +455,7 @@ function M.create_model(opt)
     -- model.soft_att_lstm = M.soft_att_lstm_concat_nox(opt)
     model.soft_att_lstm = {}
     for t = 1, opt.reason_step do
-        model.soft_att_lstm[t] = M.soft_att_lstm_concat(opt)
+        model.soft_att_lstm[t] = M.soft_att_lstm_concat_nox(opt)
     end
     model.lstm = M.soft_att_lstm_concat(opt)
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
