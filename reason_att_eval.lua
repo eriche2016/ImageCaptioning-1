@@ -140,7 +140,7 @@ function beam_search(model, dataloader, opt)
                 
                 -- forward
                 embeddings[t] = clones.emb[t]:forward(text_input[t])
-                lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
+                lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:            -- lstm forward
                     forward{embeddings[t], att_seq_beam, lstm_c[t-1], lstm_h[t-1]})
                 
                 predictions[t] = clones.softmax[t]:forward(lstm_h[t])  -- beam_size * word_cnt, log probability
