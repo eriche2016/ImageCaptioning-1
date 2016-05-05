@@ -96,12 +96,9 @@ function beam_search(model, dataloader, opt)
                         
         -- LSTM states
         local embeddings = {}
-        local initstate_h = image_map                -- hid_size, for time step 1, only 1-d
-        local initstate_c = image_map:clone()
-        local init_input = torch.CudaTensor(1):fill(anno_utils.START_NUM)
-        local lstm_c = {[0]=initstate_c}       
-        local lstm_h = {[0]=initstate_h}       
-        local text_input = {[1] = init_input}        -- input of text in every time step
+        local lstm_c = {[0] = reason_c[reason_len]}
+        local lstm_h = {[0] = reason_h[reason_len]}
+        local text_input = {[1] = torch.CudaTensor(1):fill(anno_utils.START_NUM)}  -- input of text in every time step
         local predictions = {}                       -- softmax outputs        
                        
         for t = 1, max_t do
@@ -111,9 +108,6 @@ function beam_search(model, dataloader, opt)
                     forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})
                     
                 predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- log softmax forward
-                -- print('Prediction size')
-                -- print(#predictions[t])
-                -- os.exit()
                     
                 -- get top-beam_size
                 loss_beam, sentence_beam[{{}, 1}] = predictions[t]:topk(beam_size, true)
@@ -134,9 +128,6 @@ function beam_search(model, dataloader, opt)
             else   -- when k > 1
                 -- choose input text
                 text_input[t] = sentence_beam[{{}, t-1}]
-                --print('Text input size...')
-                --print(#text_input[t])
-                -- os.exit()
                 
                 -- forward
                 embeddings[t] = clones.emb[t]:forward(text_input[t])
@@ -144,9 +135,6 @@ function beam_search(model, dataloader, opt)
                     forward{embeddings[t], att_seq_beam, lstm_c[t-1], lstm_h[t-1]})
                 
                 predictions[t] = clones.softmax[t]:forward(lstm_h[t])  -- beam_size * word_cnt, log probability
-                --print('Prediction size...')  
-                --print(#predictions[t])
-                --os.exit()
                 
                 -- deal with stop_word
                 for k = 1,beam_size do
@@ -161,14 +149,8 @@ function beam_search(model, dataloader, opt)
                
                 -- get top-k from predictions
                 local log_prob = torch.reshape(predictions[t], beam_size * word_cnt)
-                --print('Size of log_prob')
-                --print(#log_prob)
                 
                 local res, idx = log_prob:topk(beam_size, true)      -- res:  beam_size , idx: beam_size
-                
-                --print(#res)
-                --print(#idx)
-                --os.exit()
                 
                 -- update loss_beam and sentence_beam
                 local tmp_loss = torch.CudaTensor(beam_size, 1)                        -- beam_size * 1
