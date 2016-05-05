@@ -43,14 +43,18 @@ function DataLoader:__init(opt)
     opt.word_cnt = self.word_cnt
     
     -- Split dataset into train, val and test
-    self.train_set, self.val_set, self.test_set = anno_utils.split_dataset(self.val_ids, opt.val_size, opt.test_size)
+    -- self.train_set, self.val_set, self.test_set = anno_utils.split_dataset(self.val_ids, opt.val_size, opt.test_size)
+    self.train_set, self.val_set, self.test_set = anno_utils.read_index_split(opt)
+    if opt.test_mode then
+        self.val_set, self.test_set = self.test_set, self.val_set
+    end
     print('validation set size: ' .. tablex.size(self.val_set))
     print('test set size: ' .. tablex.size(self.test_set))
     
-    local cur_n = #self.train_set
-    for i = 1, #self.train_ids do
-        self.train_set[cur_n + i] = self.train_ids[i]
-    end
+    -- local cur_n = #self.train_set
+    -- for i = 1, #self.train_ids do
+    --     self.train_set[cur_n + i] = self.train_ids[i]
+    -- end
     
     print('train set size: ' .. tablex.size(self.train_set))
 

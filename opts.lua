@@ -19,7 +19,7 @@ function M.parse(arg)
     cmd:option('-test_size', 4000, 'Test set size')
 
     cmd:option('-use_attention', true, 'Use attention or not')
-    cmd:option('-use_noun', true, 'Use noun or not')
+    cmd:option('-use_noun', false, 'Use noun or not')
     cmd:option('-reason_weight', 1.0, 'weight of reasoning loss')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
@@ -38,6 +38,7 @@ function M.parse(arg)
     cmd:option('-seed', 123, 'Random number seed')
 
     cmd:option('-id2noun_file', 'data/annotations/id2nouns.txt', 'Path to the id 2 nouns file')
+    cmd:option('-arctic_dir', 'arctic-captions/splits', 'Path to index file')
 
     ------------ Training options --------------------
     cmd:option('-nEpochs', 100, 'Number of epochs in training')
@@ -50,15 +51,20 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
     cmd:option('-save_file', true, 'whether save model file?')
     cmd:option('-save_file_name', 'attention.1024.model', 'file name for saving model')
+    cmd:option('-load_file', false, 'whether load model file?')
+    cmd:option('-load_file_name', 'reason.att.8.model')
+
+    cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     
     ------------ Evaluation options --------------------
     cmd:option('-model', 'models/concat.1024.512.model', 'Model to evaluate')
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
     cmd:option('-beam_size', 5, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
+    cmd:option('-test_mode', true, 'eval on test set if true')
     
     local opt = cmd:parse(arg or {})
-    opt.eval_period = math.floor(3000 * 32 / opt.batch_size)
+    opt.eval_period = math.floor(3000 * 32 / opt.batch_size) * 2
     opt.loss_period = math.floor(600 * 32 / opt.batch_size)
     return opt
 end

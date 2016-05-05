@@ -19,14 +19,12 @@ local M = require(model_pack)
 local dataloader = DataLoader(opt)
 
 -- Create model
-local model = M.create_model(opt) 
-print(model.emb)
-print(model.soft_att_lstm)
-print(model.softmax)
--- print(model.softmax.modules[1].bias)
--- os.exit()
-print(model.criterion)
--- os.exit()
+local model
+if not opt.load_file then
+    model = M.create_model(opt)
+else
+    model = torch.load('models/' .. opt.load_file_name)
+end
 
 -- Train
 local optim_state = {learningRate = opt.LR}

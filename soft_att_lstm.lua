@@ -317,7 +317,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local loss = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
-            att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[j])
+            att_seq, fc7_images, input_text, output_text, _ = dataloader:gen_train_data(batches[j])
             local t_loss, _ = feval(params, false)
             loss = loss + t_loss
         end
@@ -329,7 +329,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local index = torch.randperm(#batches)
         for i = 1, #batches do
             if DEBUG_LEN and #batches[index[i]][1][2] < max_t then goto continue end
-            att_seq, fc7_images, input_text, output_text = dataloader:gen_train_data(batches[index[i]])
+            att_seq, fc7_images, input_text, output_text, _ = dataloader:gen_train_data(batches[index[i]])
             optim.adagrad(feval, params, optim_state)
             if DEBUG_LEN then goto continue end
             

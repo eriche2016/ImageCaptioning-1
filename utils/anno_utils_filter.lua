@@ -76,6 +76,27 @@ function utils.get_image_id(filename)
     return tonumber(utils.mysplit(utils.mysplit(filename, '_')[3], '.')[1])
 end
 
+function utils.read_ids(filename)
+    local ret = {}
+    for line in io.open(filename):lines() do
+        table.insert(ret, utils.get_image_id(line))
+    end
+    return ret
+end
+
+function utils.read_index_split(opt)
+    local train_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_train.txt'))
+    local val_rest = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_restval.txt'))
+    if not opt.train_only then
+        for _, id in ipairs(val_rest) do
+            table.insert(train_set, id)
+        end
+    end
+    local val_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_val.txt'))
+    local test_set = utils.read_ids(paths.concat(opt.arctic_dir, 'coco_test.txt'))
+    return train_set, val_set, test_set
+end
+
 -----------------------------------------------------
 -- generate (image id => filename) pairs
 -- INPUT
