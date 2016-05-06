@@ -124,12 +124,10 @@ function DataLoader:gen_train_data(batch)
         input_text[i][1] = anno_utils.START_NUM
         output_text[i][#caption + 1] = anno_utils.STOP_NUM
         if self.use_cat then
-            print(id)
             if self.id2cats[id] ~= nil then
                 for k, cat in ipairs(self.id2cats[id]) do
                     noun_list[i][k] = cat
                 end
-                print('hit')
             end
         elseif self.use_noun then
             local ind = 1

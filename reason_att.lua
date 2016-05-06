@@ -204,13 +204,13 @@ end
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local params, grad_params
     if opt.lstm_size ~= opt.fc7_size then
-        if opt.use_noun then
+        if opt.use_noun or opt.use_cat then
             params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear, model.reason_softmax, model.pooling)
         else    
             params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.linear)
         end
     else
-        if opt.use_noun then
+        if opt.use_noun or opt.use_cat then
             params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax, model.reason_softmax, model.pooling)
         else    
             params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.lstm, model.softmax)
@@ -231,7 +231,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     end
     print('cloning reasoning lstm')
     clones.soft_att_lstm = model_utils.clone_many_times(model.soft_att_lstm, opt.reason_step)
-    if opt.use_noun then
+    if opt.use_noun or opt.use_cat then
         clones.reason_softmax = model_utils.clone_many_times(model.reason_softmax, opt.reason_step)
         -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
     end 
@@ -267,7 +267,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
                 forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
             reason_h_att:select(2, t):copy(reason_h[t])
-            if opt.use_noun then
+            if opt.use_noun or opt.use_cat then
                 reason_preds[t] = clones.reason_softmax[t]:forward(reason_h[t])
                 reason_pred_mat:select(2, t):copy(reason_preds[t])
             end
@@ -275,7 +275,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         local reason_pool
         local loss_2 = 0
-        if opt.use_noun then
+        if opt.use_noun or opt.use_cat then
             reason_pool = model.pooling:forward(reason_pred_mat):float()
             local t_loss = model.reason_criterion:forward(reason_pool, noun_list) * opt.reason_weight
             if update then loss = loss + t_loss else loss_2 = loss_2 + t_loss end
@@ -294,7 +294,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         if update then
             local dreason_pred
-            if opt.use_noun then
+            if opt.use_noun or opt.use_cat then
                 dreason_pred = model.reason_criterion:backward(reason_pool, noun_list):cuda() * opt.reason_weight
                 dreason_pred = model.pooling:backward(reason_pred_mat, dreason_pred)
             end
@@ -316,7 +316,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             dreason_c[reason_len] = dlstm_c[0]
             dreason_h[reason_len] = dlstm_h[0]
             for t = reason_len, 1, -1 do
-                if opt.use_noun then
+                if opt.use_noun or opt.use_cat then
                     local doutput_t = clones.reason_softmax[t]:backward(reason_h[t], dreason_pred:select(2, t))
                     dreason_h[t]:add(doutput_t)
                 end
@@ -470,7 +470,7 @@ function M.create_model(opt)
         if opt.fc7_size ~= opt.lstm_size then
             model.linear:cuda()
         end
-        if opt.use_noun then
+        if opt.use_noun or opt.use_cat then
             model.reason_softmax:cuda()
             model.pooling:cuda()
             -- model.reason_criterion:cuda()

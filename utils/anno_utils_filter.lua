@@ -213,7 +213,6 @@ function utils.read_cats(filename)
             table.insert(id2cats[image_id], cat_id)
             cat_cnt = math.max(cat_cnt, cat_id)
         end
-        print(image_id, id2cats[image_id])
     end
     return id2cats, cat_cnt
 end
