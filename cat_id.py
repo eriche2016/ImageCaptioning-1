@@ -4,15 +4,15 @@ from collections import defaultdict as dd
 
 filenames = ['data/annotations/instances_train2014.json', 'data/annotations/instances_val2014.json']
 
-id2cats = dd(list)
+id2cats = dd(set)
 for filename in filenames:
     data = json.load(open(filename))
     for anno in data['annotations']:
-        id2cats[anno['image_id']].append(anno['category_id'])
+        id2cats[anno['image_id']].add(anno['category_id'])
 
 fout = open('data/annotations/cats.parsed.txt', 'w')
 for k, v in id2cats.iteritems():
-    fout.write("{} {}\n".format(k, " ".join(map(str, v))))
+    fout.write("{} {}\n".format(k, " ".join(map(str, list(v)))))
 fout.close()
 
 
