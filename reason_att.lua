@@ -257,7 +257,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local reason_h = {[0] = image_map}
         local reason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size)
         local embeddings, lstm_c, lstm_h, predictions, reason_preds = {}, {}, {}, {}, {}
-        local reason_pred_mat = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.word_cnt)
+        local out_dim = opt.use_noun and opt.word_cnt or opt.cat_cnt
+        local reason_pred_mat = torch.CudaTensor(input_text:size()[1], opt.reason_step, out_dim)
         local loss = 0
         local seq_len = math.min(input_text:size()[2], max_t)
         local reason_len = opt.reason_step
@@ -452,9 +453,10 @@ function M.create_model(opt)
     if opt.fc7_size ~= opt.lstm_size then
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
-    if opt.use_noun then
+    if opt.use_noun or opt.use_cat then
         -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
-        model.reason_softmax = nn.Linear(opt.lstm_size, opt.word_cnt)
+        local out_dim = opt.use_noun and opt.word_cnt or opt.cat_cnt
+        model.reason_softmax = nn.Linear(opt.lstm_size, out_dim)
         model.pooling = nn.Max(2)
         model.reason_criterion = nn.MultiLabelMarginCriterion()
     end

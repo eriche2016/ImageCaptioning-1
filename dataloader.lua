@@ -16,6 +16,9 @@ function DataLoader:__init(opt)
     self.fc7_dirs = {}
     table.insert(self.fc7_dirs, paths.concat(opt.data, opt.train_fc7))
     table.insert(self.fc7_dirs, paths.concat(opt.data, opt.val_fc7))
+    self.inst_dirs = {}
+    table.insert(self.inst_dirs, paths.concat(opt.data, opt.train_inst))
+    table.insert(self.inst_dirs, paths.concat(opt.data, opt.val_inst))
 
     self.att_size = opt.att_size
     self.feat_size = opt.feat_size
@@ -25,11 +28,16 @@ function DataLoader:__init(opt)
     self.anno_utils = anno_utils
     self.use_noun = opt.use_noun
     self.truncate = opt.truncate
+    self.use_cat = opt.use_cat
 
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
     self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')
     self.id2captions, self.word2index, self.index2word, self.word_cnt = anno_utils.read_captions(self.anno_dirs, nil)
+    if opt.use_cat then
+        self.id2cats, self.cat_cnt = anno_utils.read_cats(self.inst_dirs)
+        opt.cat_cnt = self.cat_cnt
+    end
 
     -- self.annid2nouns = anno_utils.read_nouns(opt.id2noun_file, self.word2index)
 
@@ -38,6 +46,9 @@ function DataLoader:__init(opt)
     print('id2captions size: ' .. tablex.size(self.id2captions))
     print('word2index size: '.. tablex.size(self.word2index))
     print('word_cnt: ' .. self.word_cnt)
+    if opt.use_cat then
+        print('cat_cnt: ' .. self.cat_cnt)
+    end
     
     -- This is for model
     opt.word_cnt = self.word_cnt
@@ -88,7 +99,15 @@ function DataLoader:gen_train_data(batch)
     local input_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local output_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
-    local noun_list = self.use_noun and torch.Tensor(#batch, self.word_cnt):zero() or nil
+    local noun_list
+    if self.use_cat then
+        noun_list = torch.Tensor(#batch, self.cat_cnt):zero()
+    elseif self.use_noun then
+        noun_list = torch.Tensor(#batch, self.word_cnt):zero()
+    else
+        noun_list = nil
+    end
+
     for i = 1, #batch do
         -- caption = {id, caption}
         local id, ann_id, caption = batch[i][1], batch[i][2], batch[i][3]
@@ -106,7 +125,17 @@ function DataLoader:gen_train_data(batch)
         end
         input_text[i][1] = anno_utils.START_NUM
         output_text[i][#caption + 1] = anno_utils.STOP_NUM
-        if self.use_noun then
+        if self.use_cat then
+            cat_dict = {}
+            for _, cat in ipairs(self.id2cats[id]) do
+                cat_dict[cat] = true
+            end
+            local ind = 1
+            for k, _ in pairs(cat_dict) do
+                noun_list[i][ind] = k
+                ind = ind + 1
+            end
+        elseif self.use_noun then
             local ind = 1
             for k, _ in pairs(word_dict) do
                 if k > anno_utils.NUM then
