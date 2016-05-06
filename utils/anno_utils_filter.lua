@@ -214,7 +214,7 @@ function utils.read_cats(filename)
             cat_cnt = math.max(cat_cnt, cat_id)
         end
     end
-    return id2cats, cat_id
+    return id2cats, cat_cnt
 end
 
 function utils.read_nouns(filename, word2index)
