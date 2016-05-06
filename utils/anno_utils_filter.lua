@@ -208,12 +208,12 @@ function utils.read_cats(filenames)
         local text = io.open(filename):read("*all")
         local annos = json.decode(text)['annotations']
 
-        for _, anno in ipairs(annos) do
-            local image_id, cat_id = anno['image_id'], anno['category_id']
-            if id2cats[image_id] == nil then id2cats[image_id] = {} end
-            table.insert(id2cats[image_id], cat_id)
-            cat_cnt = math.max(cat_cnt, cat_id)
-        end
+        -- for _, anno in ipairs(annos) do
+        --     local image_id, cat_id = anno['image_id'], anno['category_id']
+        --     if id2cats[image_id] == nil then id2cats[image_id] = {} end
+        --     table.insert(id2cats[image_id], cat_id)
+        --     cat_cnt = math.max(cat_cnt, cat_id)
+        -- end
     end
     return id2cats, cat_cnt
 end
