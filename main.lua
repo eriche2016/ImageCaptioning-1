@@ -32,4 +32,3 @@ local batches = dataloader:gen_batch(dataloader.train_len2captions, opt.batch_si
 local val_batches = dataloader:gen_batch(dataloader.val_len2captions, opt.batch_size)
 M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
-    

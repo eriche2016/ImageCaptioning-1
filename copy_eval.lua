@@ -42,10 +42,18 @@ function beam_search(model, dataloader, opt)
     
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        if name ~= 'linear' then 
+        if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion'
+            and name ~= 'pooling' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
+    print('cloning reasoning lstm')
+    -- clones.soft_att_lstm = model_utils.clone_many_times(model.soft_att_lstm, opt.reason_step)
+    clones.soft_att_lstm = model.soft_att_lstm
+    if opt.use_noun then
+        clones.reason_softmax = model_utils.clone_many_times(model.reason_softmax, opt.reason_step)
+        -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
+    end 
     
     local captions = {}
     local i = 1
@@ -58,7 +66,20 @@ function beam_search(model, dataloader, opt)
         else
             image_map = fc7_images
         end
+
+        local reason_c = {[0] = image_map}
+        local reason_h = {[0] = image_map}
+        local reason_h_att = torch.CudaTensor(att_seq:size()[1], opt.reason_step, opt.lstm_size)
+        local reason_len = opt.reason_step
+
+        for t = 1, reason_len do
+            reason_c[t], reason_h[t] = unpack(clones.soft_att_lstm[t]:
+                forward{att_seq, reason_c[t - 1], reason_h[t - 1]})
+            reason_h_att:select(2, t):copy(reason_h[t])
+        end
         
+        att_seq = reason_h_att
+
         local att_seq_beam = torch.CudaTensor(beam_size, att_seq:size()[2], att_seq:size()[3])
         for k = 1,beam_size do
             att_seq_beam[k] = att_seq:clone()
@@ -76,29 +97,18 @@ function beam_search(model, dataloader, opt)
                         
         -- LSTM states
         local embeddings = {}
-        local initstate_h = image_map                -- hid_size, for time step 1, only 1-d
-        local initstate_c = image_map:clone()
-        local init_input = torch.CudaTensor(1):fill(anno_utils.START_NUM)
-        local lstm_c = {[0]=initstate_c}       
-        local lstm_h = {[0]=initstate_h}       
-        local text_input = {[1] = init_input}        -- input of text in every time step
+        local lstm_c = {[0] = reason_c[reason_len]}
+        local lstm_h = {[0] = reason_h[reason_len]}
+        local text_input = {[1] = torch.CudaTensor(1):fill(anno_utils.START_NUM)}  -- input of text in every time step
         local predictions = {}                       -- softmax outputs        
                        
         for t = 1, max_t do
             if t == 1 then
                 embeddings[t] = clones.emb[t]:forward(text_input[t])
-                if opt.use_attention then
-                    lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                        forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})
-                else
-                    lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
-                        forward{embeddings[t], lstm_c[t - 1], lstm_h[t - 1]})
-                end
+                lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:            -- lstm forward
+                    forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})
                     
                 predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- log softmax forward
-                -- print('Prediction size')
-                -- print(#predictions[t])
-                -- os.exit()
                     
                 -- get top-beam_size
                 loss_beam, sentence_beam[{{}, 1}] = predictions[t]:topk(beam_size, true)
@@ -119,24 +129,13 @@ function beam_search(model, dataloader, opt)
             else   -- when k > 1
                 -- choose input text
                 text_input[t] = sentence_beam[{{}, t-1}]
-                --print('Text input size...')
-                --print(#text_input[t])
-                -- os.exit()
                 
                 -- forward
                 embeddings[t] = clones.emb[t]:forward(text_input[t])
-                if opt.use_attention then
-                    lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                        forward{embeddings[t], att_seq_beam, lstm_c[t-1], lstm_h[t-1]})
-                else
-                    lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
-                        forward{embeddings[t], lstm_c[t-1], lstm_h[t-1]})
-                end
+                lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:            -- lstm forward
+                    forward{embeddings[t], att_seq_beam, lstm_c[t-1], lstm_h[t-1]})
                 
                 predictions[t] = clones.softmax[t]:forward(lstm_h[t])  -- beam_size * word_cnt, log probability
-                --print('Prediction size...')  
-                --print(#predictions[t])
-                --os.exit()
                 
                 -- deal with stop_word
                 for k = 1,beam_size do
@@ -151,14 +150,8 @@ function beam_search(model, dataloader, opt)
                
                 -- get top-k from predictions
                 local log_prob = torch.reshape(predictions[t], beam_size * word_cnt)
-                --print('Size of log_prob')
-                --print(#log_prob)
                 
                 local res, idx = log_prob:topk(beam_size, true)      -- res:  beam_size , idx: beam_size
-                
-                --print(#res)
-                --print(#idx)
-                --os.exit()
                 
                 -- update loss_beam and sentence_beam
                 local tmp_loss = torch.CudaTensor(beam_size, 1)                        -- beam_size * 1
@@ -216,7 +209,8 @@ function beam_search(model, dataloader, opt)
         i = i + 1
     end
     -- Evaluate it
-    local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. ' ' .. opt.model)
+    -- local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_concat.1024.512.model')
+    local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_' .. opt.model)
 end
 
 -- beam_search(model, dataloader, opt)
