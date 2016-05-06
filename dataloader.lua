@@ -16,9 +16,7 @@ function DataLoader:__init(opt)
     self.fc7_dirs = {}
     table.insert(self.fc7_dirs, paths.concat(opt.data, opt.train_fc7))
     table.insert(self.fc7_dirs, paths.concat(opt.data, opt.val_fc7))
-    self.inst_dirs = {}
-    table.insert(self.inst_dirs, paths.concat(opt.data, opt.train_inst))
-    table.insert(self.inst_dirs, paths.concat(opt.data, opt.val_inst))
+    self.cat_dir = paths.concat(opt.data, opt.cat_file)
 
     self.att_size = opt.att_size
     self.feat_size = opt.feat_size
@@ -35,7 +33,7 @@ function DataLoader:__init(opt)
     self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')
     self.id2captions, self.word2index, self.index2word, self.word_cnt = anno_utils.read_captions(self.anno_dirs, nil)
     if opt.use_cat then
-        self.id2cats, self.cat_cnt = anno_utils.read_cats(self.inst_dirs)
+        self.id2cats, self.cat_cnt = anno_utils.read_cats(self.cat_dir)
         opt.cat_cnt = self.cat_cnt
     end
 
@@ -126,14 +124,8 @@ function DataLoader:gen_train_data(batch)
         input_text[i][1] = anno_utils.START_NUM
         output_text[i][#caption + 1] = anno_utils.STOP_NUM
         if self.use_cat then
-            cat_dict = {}
-            for _, cat in ipairs(self.id2cats[id]) do
-                cat_dict[cat] = true
-            end
-            local ind = 1
-            for k, _ in pairs(cat_dict) do
-                noun_list[i][ind] = k
-                ind = ind + 1
+            for k, cat in ipairs(self.id2cats[id]) do
+                noun_list[i][k] = cat
             end
         elseif self.use_noun then
             local ind = 1
