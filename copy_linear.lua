@@ -325,7 +325,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     local doutput_t = clones.reason_softmax[t]:backward(reason_h[t], dreason_pred:select(2, t))
                     dreason_h[t]:add(doutput_t)
                 end
-                dreason_h[t]:add(dreason_h_att:select(2, t))
+                -- dreason_h[t]:add(dreason_h_att:select(2, t))
                 _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
