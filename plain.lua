@@ -100,10 +100,11 @@ function M.soft_att_lstm_concat(opt)
     local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
     -- test
-    local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
+    -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
     -- local all_input_sums = nn.CAddTable()({prev_all_input_sums, att_add})
 
     -- local all_input_sums = nn.CAddTable()({i2h, h2h, att_add})
+    local all_input_sums = nn.CAddTable(){i2h, h2h}
 
     local sigmoid_chunk = nn.Narrow(2, 1, 3 * rnn_size)(all_input_sums)
     sigmoid_chunk = nn.Sigmoid()(sigmoid_chunk)
