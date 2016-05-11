@@ -475,7 +475,10 @@ function M.create_model(opt)
     
     if opt.nGPU > 0 then
         model.emb:cuda()
-        model.soft_att_lstm:cuda()
+        -- model.soft_att_lstm:cuda()
+        for _, m in ipairs(model.soft_att_lstm) do
+            m:cuda()
+        end
         model.lstm:cuda()
         model.softmax:cuda()
         model.criterion:cuda()
