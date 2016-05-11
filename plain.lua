@@ -266,6 +266,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local reason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size)
         local embeddings, lstm_c, lstm_h, predictions, reason_preds = {}, {}, {}, {}, {}
         local out_dim = opt.use_noun and opt.word_cnt or opt.cat_cnt
+        if out_dim == nil then out_dim = 1 end
         local reason_pred_mat = torch.CudaTensor(input_text:size()[1], opt.reason_step, out_dim)
         local loss = 0
         local seq_len = math.min(input_text:size()[2], max_t)
