@@ -20,12 +20,12 @@ function M.parse(arg)
     cmd:option('-test_size', 4000, 'Test set size')
 
     cmd:option('-use_attention', true, 'Use attention or not')
-    cmd:option('-use_noun', true, 'Use noun or not')
+    cmd:option('-use_noun', false, 'Use noun or not')
     cmd:option('-use_cat', false, 'Use category or not. If true then will disgard words.')
     cmd:option('-reason_weight', 10.0, 'weight of reasoning loss')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'plain', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
