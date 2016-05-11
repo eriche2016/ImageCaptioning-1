@@ -315,8 +315,9 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
             for t = seq_len, 1, -1 do
                 local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))
+                print(dlstm_h == nil, clones.softmax == nil, lstm_h == nil)
                 dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))
-                dembeddings[t], _, dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.lstm[t]:
+                dembeddings[t], dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.lstm[t]:
                     backward({embeddings[t], lstm_c[t - 1], lstm_h[t - 1]},
                     {dlstm_c[t], dlstm_h[t]}))
                 -- dreason_h_att:add(doutput_t)
