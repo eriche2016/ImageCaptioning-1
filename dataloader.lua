@@ -78,7 +78,9 @@ function DataLoader:__init(opt)
 
     -- Generate len2captions
     self.train_len2captions = anno_utils.gen_len2captions(self.train_set, self.id2captions)
-    self.val_len2captions = anno_utils.gen_len2captions(self.val_set, self.id2captions)
+    if not opt.server_test_mode then
+        self.val_len2captions = anno_utils.gen_len2captions(self.val_set, self.id2captions)
+    end
     print('size of train_len2captions: ' .. tablex.size(self.train_len2captions))
     print('size of val_len2captions: ' .. tablex.size(self.val_len2captions))
     
