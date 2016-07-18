@@ -78,11 +78,11 @@ function DataLoader:__init(opt)
 
     -- Generate len2captions
     self.train_len2captions = anno_utils.gen_len2captions(self.train_set, self.id2captions)
+    print('size of train_len2captions: ' .. tablex.size(self.train_len2captions))
     if not opt.server_test_mode then
         self.val_len2captions = anno_utils.gen_len2captions(self.val_set, self.id2captions)
+        print('size of val_len2captions: ' .. tablex.size(self.val_len2captions))
     end
-    print('size of train_len2captions: ' .. tablex.size(self.train_len2captions))
-    print('size of val_len2captions: ' .. tablex.size(self.val_len2captions))
     
     local max_seq_len = 1  
     for k,v in pairs(self.train_len2captions) do
