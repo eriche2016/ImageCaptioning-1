@@ -12,8 +12,8 @@ function M.parse(arg)
     cmd:option('-lstm_size', 1024, 'LSTM size')
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
-    cmd:option('-fc7_size', 4096, 'the dimension of fc7')
-    -- cmd:option('-fc7_size', 1024, 'the dimension of fc7')
+    -- cmd:option('-fc7_size', 4096, 'the dimension of fc7')
+    cmd:option('-fc7_size', 1024, 'the dimension of fc7')
     cmd:option('-att_hid_size', 512, 'the hidden size of the attention MLP; 0 if not using hidden layer')
     
     cmd:option('-val_size', 4000, 'Validation set size')
@@ -32,10 +32,13 @@ function M.parse(arg)
     cmd:option('-data', 'data/', 'Path to dataset')
     cmd:option('-train_feat', 'train2014_features_vgg_vd19_conv5', 'Path to pre-extracted training image feature')
     cmd:option('-val_feat', 'val2014_features_vgg_vd19_conv5', 'Path to pre-extracted validation image feature')
-    cmd:option('-train_fc7', 'train2014_features_vgg_vd19_fc7', 'Path to pre-extracted training fully connected 7')
-    cmd:option('-val_fc7', 'val2014_features_vgg_vd19_fc7', 'Path to pre-extracted validation fully connected 7')
-    -- cmd:option('-train_fc7', 'train2014_features_googlenet', 'Path to pre-extracted training fully connected 7')
-    -- cmd:option('-val_fc7', 'val2014_features_googlenet', 'Path to pre-extracted validation fully connected 7')
+    cmd:option('-test_feat', 'test2014_features_vgg_vd19_conv5', 'Path to pre-extracted test image feature')
+    -- cmd:option('-train_fc7', 'train2014_features_vgg_vd19_fc7', 'Path to pre-extracted training fully connected 7')
+    -- cmd:option('-val_fc7', 'val2014_features_vgg_vd19_fc7', 'Path to pre-extracted validation fully connected 7')
+    -- cmd:option('-test_fc7', 'test2014_features_vgg_vd19_fc7', 'Path to pre-extracted test fully connected 7')
+    cmd:option('-train_fc7', 'train2014_features_googlenet', 'Path to pre-extracted training fully connected 7')
+    cmd:option('-val_fc7', 'val2014_features_googlenet', 'Path to pre-extracted validation fully connected 7')
+    cmd:option('-test_fc7', 'test2014_features_googlenet', 'Path to pre-extracted test fully connected 7')
     cmd:option('-train_anno', 'annotations/captions_train2014.json', 'Path to training image annotaion file')
     cmd:option('-val_anno', 'annotations/captions_val2014.json', 'Path to validation image annotaion file')
     cmd:option('-cat_file', 'annotations/cats.parsed.txt', 'Path to the category file')
@@ -62,17 +65,19 @@ function M.parse(arg)
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     
     ------------ Evaluation options --------------------
-    cmd:option('-model', 'models/concat.1024.512.model', 'Model to evaluate')
+    cmd:option('-model', 'models/copy.all.val.8.w10.noun.model', 'Model to evaluate')
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
-    cmd:option('-beam_size', 5, 'Beam size in beam search')
+    cmd:option('-beam_size', 3, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
     cmd:option('-test_mode', true, 'eval on test set if true')
+    cmd:option('-server_test_mode', true, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
     opt.eval_period = math.floor(3000 * 32 / opt.batch_size) * 2
     opt.loss_period = math.floor(600 * 32 / opt.batch_size)
     if opt.use_cat then opt.use_noun = false end
+    if opt.server_test_mode then opt.test_mode = false end
     return opt
 end
 
