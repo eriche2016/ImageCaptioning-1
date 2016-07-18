@@ -211,6 +211,7 @@ function beam_search(model, dataloader, opt)
     -- Evaluate it
     -- local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_concat.1024.512.model')
     if opt.server_test_mode then
+        model_name = anno_utils.mysplit(opt.model, '/')[2]
         eval_utils.write_json('server_test/test_' .. opt.model .. '.json', captions)
     else
         local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_' .. opt.model)
