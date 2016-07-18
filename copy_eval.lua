@@ -18,7 +18,7 @@ torch.manualSeed(opt.seed)
 local dataloader = DataLoader(opt)
 
 -- Load model
-local model = torch.load('models/' .. opt.model)
+local model = torch.load(opt.model)
 
 function idx2coord(k, n)
     local i = math.floor((k-1)/n) + 1
@@ -57,7 +57,8 @@ function beam_search(model, dataloader, opt)
     
     local captions = {}
     local i = 1
-    while i <= #dataloader.val_set do
+    -- while i <= #dataloader.val_set do
+    while i <= 30 do
         collectgarbage()
         local att_seq, fc7_images = dataloader:gen_test_data(i, i)
         local image_map
