@@ -206,11 +206,12 @@ function beam_search(model, dataloader, opt)
             print(dataloader.val_set[i], caption)
         end
         -- table.insert(captions, {image_id = dataloader.val_set[i], caption = caption})
-        fout:write(image_id .. '\t' .. caption)
+        fout:write(dataloader.val_set[i] .. '\t' .. caption)
 
         -- Next image
         i = i + 1
     end
+    fout:close()
     -- Evaluate it
     -- local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_concat.1024.512.model')
     -- if opt.server_test_mode then
