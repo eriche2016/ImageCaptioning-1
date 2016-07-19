@@ -206,7 +206,7 @@ function beam_search(model, dataloader, opt)
             print(dataloader.val_set[i], caption)
         end
         -- table.insert(captions, {image_id = dataloader.val_set[i], caption = caption})
-        fout:write(dataloader.val_set[i] .. '\t' .. caption)
+        fout:write(dataloader.val_set[i] .. '\t' .. caption .. '\n')
 
         -- Next image
         i = i + 1
