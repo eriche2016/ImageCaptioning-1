@@ -56,10 +56,11 @@ function beam_search(model, dataloader, opt)
     end 
     
     local captions = {}
-    local i = 1
-    fout = io.open('server_test/captions1.txt', 'w')
-    -- while i <= #dataloader.val_set do
-    while i < 20000 do
+    local i = 20000
+    -- local i = 1
+    fout = io.open('server_test/captions2.txt', 'w')
+    while i <= #dataloader.val_set do
+    -- while i < 20000 do
         collectgarbage()
         local att_seq, fc7_images = dataloader:gen_test_data(i, i)
         local image_map
