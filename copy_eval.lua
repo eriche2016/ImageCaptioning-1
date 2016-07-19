@@ -56,9 +56,11 @@ function beam_search(model, dataloader, opt)
     end 
     
     local captions = {}
-    local i = 20000
-    -- local i = 1
-    fout = io.open('server_test/captions2.txt', 'w')
+    -- local i = 20000
+    local i = 1
+    if opt.server_test_mode then
+        fout = io.open('server_test/captions2.txt', 'w')
+    end
     while i <= #dataloader.val_set do
     -- while i < 20000 do
         collectgarbage()
@@ -207,18 +209,23 @@ function beam_search(model, dataloader, opt)
             print(dataloader.val_set[i], caption)
         end
         -- table.insert(captions, {image_id = dataloader.val_set[i], caption = caption})
-        fout:write(dataloader.val_set[i] .. '\t' .. caption .. '\n')
+
+        if opt.server_test_mode then
+            fout:write(dataloader.val_set[i] .. '\t' .. caption .. '\n')
+        end
 
         -- Next image
         i = i + 1
     end
-    fout:close()
+    if opt.server_test_mode then
+        fout:close()
+    end
     -- Evaluate it
     -- local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_concat.1024.512.model')
     -- if opt.server_test_mode then
     --     eval_utils.write_json('server_test/test_' .. opt.model .. '.json', captions)
     -- else
-    --     local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_' .. opt.model)
+    local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_' .. opt.model)
     -- end
 end
 

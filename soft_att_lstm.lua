@@ -208,9 +208,17 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local DEBUG_LEN = false
     local params, grad_params
     if opt.lstm_size ~= opt.fc7_size then
-        params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.linear)
+        if opt.use_noun then
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.linear, model.reason_softmax, model.pooling)
+        else
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.linear)
+        end
     else
-        params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
+        if opt.use_noun then
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax, model.reason_softmax, model.pooling)
+        else
+            params, grad_params = model_utils.combine_all_parameters(model.emb, model.soft_att_lstm, model.softmax)
+        end
     end
     local clones = {}
     anno_utils = dataloader.anno_utils
@@ -220,12 +228,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
-        if name ~= 'linear' then 
+        if name ~= 'linear' and name ~= 'pooling' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
 
-    local att_seq, fc7_images, input_text, output_text
+    local att_seq, fc7_images, input_text, output_text, noun_list
 
     local function feval(params_, update)
         if update == nil then update = true end
@@ -252,8 +260,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local lstm_h = {[0]=initstate_h}   -- output values of LSTM
         local predictions = {}             -- softmax outputs
         local loss = 0
+        local out_dim = opt.word_cnt
         local seq_len = input_text:size()[2]     -- sequence length 
         seq_len = math.min(seq_len, max_t) -- get truncated
+        local reason_preds = {}
+        local reason_pred_mat = torch.CudaTensor(input_text:size()[1], seq_len, out_dim)
         
         if DEBUG_LEN then print('seq_len', seq_len) end
         for t = 1, seq_len do
@@ -266,9 +277,21 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
                     forward{embeddings[t], lstm_c[t - 1], lstm_h[t - 1]})
             end
+            if opt.use_noun then
+                reason_preds[t] = clones.reason_softmax[t]:forward(lstm_h[t])
+                reason_pred_mat:select(2, t):copy(reason_preds[t])
+            end
             
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
             loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))    -- criterion forward
+        end
+
+        local reason_pool
+        local loss_2
+        if opt.use_noun then
+            reason_pool = model.pooling:forward(reason_pred_mat):float()
+            local t_loss = model.reason_criterion:forward(reason_pool, noun_list) * opt.reason_weight
+            if update then loss = loss + t_loss else loss_2 = loss_2 + t_loss end
         end
                     
         ------------------- backward pass -------------------
@@ -437,6 +460,12 @@ function M.create_model(opt)
     if opt.lstm_size ~= opt.fc7_size then
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
+    if opt.use_noun then
+        local out_dim = opt.word_cnt
+        model.reason_softmax = nn.Linear(opt.lstm_size, out_dim)
+        model.pooling = nn.Max(2)
+        model.reason_criterion = nn.MultiLabelMarginCriterion()
+    end
     
     if opt.nGPU > 0 then
         model.emb:cuda()
@@ -445,6 +474,10 @@ function M.create_model(opt)
         model.criterion:cuda()
         if opt.lstm_size ~= opt.fc7_size then
             model.linear:cuda()
+        end
+        if opt.use_noun then
+            model.reason_softmax:cuda()
+            model.pooling:cuda()
         end
     end
     return model
