@@ -65,8 +65,8 @@ function M.parse(arg)
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     
     ------------ Evaluation options --------------------
-    -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
-    cmd:option('-model', 'reason.att.all.val.8.w10.noun.model', 'Model to evaluate')
+    cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
+    -- cmd:option('-model', 'reason.att.all.val.8.w10.noun.model', 'Model to evaluate')
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
     cmd:option('-beam_size', 3, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
