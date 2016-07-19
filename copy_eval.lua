@@ -208,10 +208,11 @@ function beam_search(model, dataloader, opt)
         if i <= 10 then
             print(dataloader.val_set[i], caption)
         end
-        -- table.insert(captions, {image_id = dataloader.val_set[i], caption = caption})
 
         if opt.server_test_mode then
             fout:write(dataloader.val_set[i] .. '\t' .. caption .. '\n')
+        else
+            table.insert(captions, {image_id = dataloader.val_set[i], caption = caption})
         end
 
         -- Next image
