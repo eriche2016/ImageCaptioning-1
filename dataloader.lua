@@ -66,13 +66,6 @@ function DataLoader:__init(opt)
         self.id2fc7_file = server_id2fc7_file
     end
 
-    local cc = 1
-    for k, v in pairs(self.id2fc7_file) do
-        print(k, v)
-        cc = cc + 1
-        if cc > 10 then break end
-    end
-
     print('validation set size: ' .. tablex.size(self.val_set))
     print('test set size: ' .. tablex.size(self.test_set))
     
