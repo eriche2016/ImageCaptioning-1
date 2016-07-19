@@ -14,7 +14,7 @@ from os.path import isfile, join
 
 data = []
 for filename in listdir('data/val2014_features_googlenet'):
-    if filename.endswith('jpg'):
+    if filename.endswith('dat'):
         id = int(filename.split('_')[-1].split('.')[0])
         data.append({'image_id': id, 'caption': ''})
 json.dump(data, open('server_test/captions_val2014_review_results.json', 'w'))
