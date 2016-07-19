@@ -57,8 +57,7 @@ function beam_search(model, dataloader, opt)
     
     local captions = {}
     local i = 1
-    -- while i <= #dataloader.val_set do
-    while i <= 30 do
+    while i <= #dataloader.val_set do
         collectgarbage()
         local att_seq, fc7_images = dataloader:gen_test_data(i, i)
         local image_map
