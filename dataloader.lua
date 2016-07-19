@@ -59,8 +59,8 @@ function DataLoader:__init(opt)
     end
 
     if opt.server_test_mode then
-        server_id2file, server_test_ids, _ = anno_utils.read_dataset({paths.concat(opt.data, opt.test_feat)},'.dat')
-        server_id2fc7_file, _, _ = anno_utils.read_dataset({paths.concat(opt.data, opt.test_fc7)}, '.dat')
+        server_id2file, server_test_ids, _ = anno_utils.read_dataset({paths.concat(opt.data, opt.val_feat)},'.dat')
+        server_id2fc7_file, _, _ = anno_utils.read_dataset({paths.concat(opt.data, opt.val_fc7)}, '.dat')
         self.val_set = server_test_ids
         self.id2file = server_id2file
         self.id2fc7_file = server_id2fc7_file
