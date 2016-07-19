@@ -67,7 +67,7 @@ function DataLoader:__init(opt)
     end
 
     local cc = 1
-    for k, v in pairs(id2file):
+    for k, v in pairs(id2file) do
         print(k, v)
         cc = cc + 1
         if cc > 10 then break end
