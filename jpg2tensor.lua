@@ -5,6 +5,8 @@ local cmd = torch.CmdLine()
 cmd:option('-from', 'data/train2014')
 cmd:option('-to', 'data/train2014_jpg')
 
+local opt = cmd:parse(arg or {})
+
 local loadSize   = {3, 256, 256}
 local sampleSize = {3, 224, 224}
 
