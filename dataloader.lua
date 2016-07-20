@@ -42,7 +42,7 @@ function DataLoader:__init(opt)
         self.jpg_dirs = {}
         table.insert(self.jpg_dirs, paths.concat(opt.data, opt.train_jpg))
         table.insert(self.jpg_dirs, paths.concat(opt.data, opt.val_jpg))
-        self.id2jpg, _, _ = anno_utils.read_dataset(self.jpg_dirs, '.jpg')
+        self.id2jpg, _, _ = anno_utils.read_dataset(self.jpg_dirs, '.dat')
     end
 
     -- self.annid2nouns = anno_utils.read_nouns(opt.id2noun_file, self.word2index)
