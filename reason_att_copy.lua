@@ -427,7 +427,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 end
 
                 local eval_struct = M.language_eval(captions, 'attention')
-                local bleu_4 = eval_struct.Bleu_4
+                local bleu_4
+                if opt.early_stop == 'cider' then
+                    bleu_4 = eval_struct.CIDEr
+                else
+                    bleu_4 = eval_struct.Bleu_4
+                end
 
                 if bleu_4 > max_bleu_4 then
                     max_bleu_4 = bleu_4
@@ -435,7 +440,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                         torch.save('models/' .. opt.save_file_name, model)
                     end
                 end
-                print(epoch, i, 'max_bleu', max_bleu_4, 'bleu', bleu_4)
+                if opt.early_stop == 'cider' then
+                    print(epoch, i, 'max_cider', max_bleu_4, 'cider', bleu_4)
+                else
+                    print(epoch, i, 'max_bleu', max_bleu_4, 'bleu', bleu_4)
+                end
             end
             
             ::continue::

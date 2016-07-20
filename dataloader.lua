@@ -58,6 +58,14 @@ function DataLoader:__init(opt)
         self.val_set, self.test_set = self.test_set, self.val_set
     end
 
+    if opt.server_train_mode then
+        local cur_n = #self.train_set
+        for i = 1, #self.val_set do
+            self.train_set[cur_n + i] = self.val_set[i]
+        end
+        self.val_set = self.train_set
+    end
+
     if opt.server_test_mode then
         server_id2file, server_test_ids, _ = anno_utils.read_dataset({paths.concat(opt.data, opt.test_feat)},'.dat')
         server_id2fc7_file, _, _ = anno_utils.read_dataset({paths.concat(opt.data, opt.test_fc7)}, '.dat')
@@ -79,7 +87,7 @@ function DataLoader:__init(opt)
     -- Generate len2captions
     self.train_len2captions = anno_utils.gen_len2captions(self.train_set, self.id2captions)
     print('size of train_len2captions: ' .. tablex.size(self.train_len2captions))
-    if not opt.server_test_mode then
+    if not opt.server_test_mode and not opt.server_train_mode then
         self.val_len2captions = anno_utils.gen_len2captions(self.val_set, self.id2captions)
         print('size of val_len2captions: ' .. tablex.size(self.val_len2captions))
     end

@@ -59,10 +59,11 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'attention.1024.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'copy.google.server.8.w10.noun.model', 'file name for saving model')
     cmd:option('-load_file', false, 'whether load model file?')
     cmd:option('-load_file_name', 'reason.att.8.model')
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
+    cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
@@ -71,7 +72,8 @@ function M.parse(arg)
     cmd:option('-beam_size', 3, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
-    cmd:option('-test_mode', true, 'eval on test set if true')
+    cmd:option('-test_mode', false, 'eval on test set if true')
+    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
@@ -79,6 +81,7 @@ function M.parse(arg)
     opt.loss_period = math.floor(600 * 32 / opt.batch_size)
     if opt.use_cat then opt.use_noun = false end
     if opt.server_test_mode then opt.test_mode = false end
+    if opt.server_train_mode then opt.test_mode = false end
     return opt
 end
 
