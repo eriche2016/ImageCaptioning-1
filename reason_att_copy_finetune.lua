@@ -257,6 +257,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
         local att_seq = input2conv5:forward(jpg)
         local fc7_images = conv52fc7:forward(att_seq)
+        print(jpg:size())
+        print(att_seq:size())
 
         local image_map
         if opt.fc7_size ~= opt.lstm_size then
