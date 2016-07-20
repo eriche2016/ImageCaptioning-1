@@ -296,6 +296,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     
         ------------------- backward pass -------------------
         if update then
+            local dreason_pred
+            if opt.use_noun then
+                dreason_pred = model.reason_criterion:backward(reason_pool, noun_list):cuda() * opt.reason_weight
+                dreason_pred = model.pooling:backward(reason_pred_mat, dreason_pred)
+            end
+
             local dembeddings = {}                                    -- d loss / d input embeddings
             local dlstm_c = {[seq_len]=dfinalstate_c}                 -- internal cell states of LSTM
             local dlstm_h = {}                                        -- output values of LSTM
@@ -308,6 +314,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     dlstm_h[t] = clones.softmax[t]:backward(lstm_h[t], doutput_t)
                 else
                     dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))     -- softmax backward
+                end
+
+                if opt.use_noun then
+                    local d_reason_output_t = clones.reason_softmax:backward(lstm_h[t], dreason_pred:select(2, t))
+                    dlstm_h[t]:add(d_reason_output_t)
                 end
                 
                 -- backprop through LSTM timestep
@@ -332,19 +343,21 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
         
         grad_params:clamp(-5, 5)
-        return loss, grad_params
+        return loss, update and grad_params or loss_2
     end 
     --- end of feval
 
     local function comp_error(batches)
         local loss = 0
+        local loss_2 = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
-            att_seq, fc7_images, input_text, output_text, _ = dataloader:gen_train_data(batches[j])
-            local t_loss, _ = feval(params, false)
+            att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[j])
+            local t_loss, t_loss_2 = feval(params, false)
             loss = loss + t_loss
+            loss_2 = loss_2 + t_loss_2
         end
-        return loss
+        return loss, loss_2
     end
     
     local max_bleu_4 = 0
@@ -352,15 +365,15 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local index = torch.randperm(#batches)
         for i = 1, #batches do
             if DEBUG_LEN and #batches[index[i]][1][2] < max_t then goto continue end
-            att_seq, fc7_images, input_text, output_text, _ = dataloader:gen_train_data(batches[index[i]])
+            att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[index[i]])
             optim.adagrad(feval, params, optim_state)
             if DEBUG_LEN then goto continue end
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
-                train_loss = comp_error(batches)
-                val_loss = comp_error(val_batches)
-                print(epoch, i, 'train', train_loss, 'val', val_loss)
+                train_loss, train_loss_2 = comp_error(batches)
+                val_loss, val_loss_2 = comp_error(val_batches)
+                print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
                 collectgarbage()
             end
 
