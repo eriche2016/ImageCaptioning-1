@@ -60,10 +60,10 @@ function M.parse(arg)
     -- cmd:option('-eval_period', 12000, 'Every certain period, evaluate current model')
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
-    cmd:option('-val_batch_size', 64, 'Batch size for testing') -- 10
+    cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 0.001, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
-    cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5') -- 50
+    cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'copy.fine.vgg.all.val.8.w10.noun.model', 'file name for saving model')

@@ -377,12 +377,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
-                -- train_loss, train_loss_2 = comp_error(batches)
-                -- val_loss, val_loss_2 = comp_error(val_batches)
-                -- print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
-                -- collectgarbage()
-                print(epoch, i)
+                train_loss, train_loss_2 = comp_error(batches)
+                val_loss, val_loss_2 = comp_error(val_batches)
+                print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
                 collectgarbage()
+                -- print(epoch, i)
+                -- collectgarbage()
             end
 
             if i == 1 or i % opt.eval_period == 0 then
