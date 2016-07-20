@@ -267,7 +267,8 @@ function DataLoader:gen_train_jpg(batch)
             end
         end
     end
-    return jpg, input_text, output_text, noun_list    
+    return jpg, input_text, output_text, noun_list 
+end   
 
 function DataLoader:gen_test_data(j1, j2)
     local images = torch.CudaTensor(j2 - j1 + 1, self.att_size, self.feat_size)
