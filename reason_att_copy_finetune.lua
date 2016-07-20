@@ -390,6 +390,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 local j1 = 1
                 while j1 <= #dataloader.val_set do
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
+                    print('testing', j1, j2)
                     jpg = dataloader:gen_test_jpg(j1, j2)
 
                     local conv5 = input2conv5:forward(jpg)
