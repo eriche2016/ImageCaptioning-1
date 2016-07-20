@@ -193,7 +193,7 @@ function DataLoader:gen_train_jpg(batch)
         -- local file = files[id2index[id]]
         local jpg_file = self.id2jpg[id]
         -- from 512*14*14
-        jpg[i]:copy(jpg_file)
+        jpg[i]:copy(torch.load(jpg_file))
         local word_dict = {}
         for j = 1, #caption do
             input_text[i][j + 1] = caption[j]
@@ -239,7 +239,7 @@ function DataLoader:gen_test_jpg(j1, j2)
     for i = j1, j2 do
         local id = self.val_set[i]
         local jpg_file = self.id2jpg[id]
-        jpg[i - j1 + 1]:copy(jpg_file)
+        jpg[i - j1 + 1]:copy(torch.load(jpg_file))
     end
     return jpg
 end

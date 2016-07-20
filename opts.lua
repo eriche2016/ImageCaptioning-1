@@ -25,7 +25,7 @@ function M.parse(arg)
     cmd:option('-reason_weight', 10.0, 'weight of reasoning loss')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'reason_att_copy_finetune', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -61,16 +61,16 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 0.01, 'Initial learning rate') -- 0.01
+    cmd:option('-LR', 0.001, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'copy.server.vgg.all.val.8.w10.noun.model', 'file name for saving model')
     cmd:option('-save_conv5_name', 'copy.fine.vgg.conv5.model')
     cmd:option('-save_fc7_name', 'copy.fine.vgg.fc7.model')
 
-    cmd:option('-load_file', false, 'whether load model file?')
+    cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_file_name', 'copy.all.val.8.w10.noun.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
@@ -86,7 +86,7 @@ function M.parse(arg)
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
     cmd:option('-test_mode', false, 'eval on test set if true')
-    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
+    cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
