@@ -359,6 +359,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local loss = 0
         local loss_2 = 0
         for j = 1, opt.max_eval_batch do
+            print('batch {}'.format(j))
             if j > #batches then break end
             jpg, input_text, output_text, noun_list = dataloader:gen_train_jpg(batches[j])
             local t_loss, t_loss_2 = feval(params, false)
