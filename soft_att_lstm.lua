@@ -317,7 +317,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 end
 
                 if opt.use_noun then
-                    local d_reason_output_t = clones.reason_softmax:backward(lstm_h[t], dreason_pred:select(2, t))
+                    local d_reason_output_t = clones.reason_softmax[t]:backward(lstm_h[t], dreason_pred:select(2, t))
                     dlstm_h[t]:add(d_reason_output_t)
                 end
                 
