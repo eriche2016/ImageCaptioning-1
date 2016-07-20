@@ -366,7 +366,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for i = 1, #batches do
             if DEBUG_LEN and #batches[index[i]][1][2] < max_t then goto continue end
             att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[index[i]])
-            optim.adagrad(feval, params, optim_state)
+            -- optim.adagrad(feval, params, optim_state)
             if DEBUG_LEN then goto continue end
             
             ----------------- Evaluate the model in validation set ----------------
