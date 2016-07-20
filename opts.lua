@@ -80,7 +80,7 @@ function M.parse(arg)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
-    cmd:option('-model', 'copy.google.val.all.8.noun.w10.model', 'Model to evaluate')
+    -- cmd:option('-model', 'copy.google.val.all.8.noun.w10.model', 'Model to evaluate')
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
     cmd:option('-beam_size', 3, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
@@ -97,6 +97,7 @@ function M.parse(arg)
     if opt.server_train_mode then opt.test_mode = false end
     opt.jpg = false
     if opt.model_pack == 'reason_att_copy_finetune' then opt.jpg = true end
+    opt.model = opt.load_file_name
     return opt
 end
 
