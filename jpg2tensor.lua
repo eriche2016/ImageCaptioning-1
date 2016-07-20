@@ -2,8 +2,8 @@ require 'paths'
 require 'image'
 
 local cmd = torch.CmdLine()
-cmd:option('-from', 'data/train2014')
-cmd:option('-to', 'data/train2014_jpg')
+cmd:option('-from', 'data/train2014/')
+cmd:option('-to', 'data/train2014_jpg/')
 
 local opt = cmd:parse(arg or {})
 
