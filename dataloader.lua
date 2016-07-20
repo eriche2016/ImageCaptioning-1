@@ -5,6 +5,55 @@ local tablex = require('pl.tablex')
 local M = {}
 local DataLoader = torch.class('lstm.DataLoader', M)
 
+local loadSize   = {3, 256, 256}
+local sampleSize = {3, 224, 224}
+
+function loadImage(path)
+   local input = image.load(path, 3, 'float')
+   -- find the smaller dimension, and resize it to loadSize (while keeping aspect ratio)
+   if input:size(3) < input:size(2) then
+      input = image.scale(input, loadSize[2], loadSize[3] * input:size(2) / input:size(3))
+   else
+      input = image.scale(input, loadSize[2] * input:size(3) / input:size(2), loadSize[3])
+   end
+   return input
+end
+
+-- VGG preprocessing
+local bgr_means = {103.939,116.779,123.68}
+
+function vggPreprocess(img)
+  local im2 = img:clone()
+  im2[{1,{},{}}] = img[{3,{},{}}]
+  im2[{3,{},{}}] = img[{1,{},{}}]
+
+  im2:mul(255)
+  for i=1,3 do
+    im2[i]:add(-bgr_means[i])
+  end
+  return im2
+end
+
+function centerCrop(input)
+   local oH = sampleSize[2]
+   local oW = sampleSize[3]
+   local iW = input:size(3)
+   local iH = input:size(2)
+   local w1 = math.ceil((iW-oW)/2)
+   local h1 = math.ceil((iH-oH)/2)
+   local out = image.crop(input, w1, h1, w1+oW, h1+oW) -- center patch
+   return out
+end
+
+-- function to load the image
+local extractHook = function(path)
+   collectgarbage()
+   local input = loadImage(path)
+   local vggPreprocessed = vggPreprocess(input)
+   local out = centerCrop(vggPreprocessed)
+   return out
+end
+
 function DataLoader:__init(opt)
     print('Initialize dataloader...')
     self.feat_dirs = {}
@@ -35,6 +84,13 @@ function DataLoader:__init(opt)
     if opt.use_cat then
         self.id2cats, self.cat_cnt = anno_utils.read_cats(self.cat_dir)
         opt.cat_cnt = self.cat_cnt
+    end
+
+    if opt.jpg then
+        self.jpg_dirs = {}
+        table.insert(self.jpg_dirs, paths.concat(opt.data, opt.train_jpg))
+        table.insert(self.jpg_dirs, paths.concat(opt.data, opt.val_jpg))
+        self.id2jpg, _, _ = anno_utils.read_dataset(self.jpg_dirs, '.jpg')
     end
 
     -- self.annid2nouns = anno_utils.read_nouns(opt.id2noun_file, self.word2index)
@@ -161,6 +217,53 @@ function DataLoader:gen_train_data(batch)
     return images, fc7_images, input_text, output_text, noun_list
 end
 
+function DataLoader:gen_train_jpg(batch)
+    local jpg = torch.CudaTensor(#batch, 3, 224, 224)
+
+    local input_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
+    local output_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
+    local noun_list
+    if self.use_cat then
+        noun_list = torch.Tensor(#batch, self.cat_cnt):zero()
+    elseif self.use_noun then
+        noun_list = torch.Tensor(#batch, self.word_cnt):zero()
+    else
+        noun_list = nil
+    end
+
+    for i = 1, #batch do
+        -- caption = {id, caption}
+        local id, ann_id, caption = batch[i][1], batch[i][2], batch[i][3]
+        -- local file = files[id2index[id]]
+        local jpg_file = self.id2jpg[id]
+        -- from 512*14*14
+        jpg[i]:copy(extractHook(jpg_file))
+        local word_dict = {}
+        for j = 1, #caption do
+            input_text[i][j + 1] = caption[j]
+            output_text[i][j] = caption[j]
+            word_dict[caption[j]] = true
+        end
+        input_text[i][1] = anno_utils.START_NUM
+        output_text[i][#caption + 1] = anno_utils.STOP_NUM
+        if self.use_cat then
+            if self.id2cats[id] ~= nil then
+                for k, cat in ipairs(self.id2cats[id]) do
+                    noun_list[i][k] = cat
+                end
+            end
+        elseif self.use_noun then
+            local ind = 1
+            for k, _ in pairs(word_dict) do
+                if k > anno_utils.NUM then
+                    noun_list[i][ind] = k
+                    ind = ind + 1
+                end
+            end
+        end
+    end
+    return jpg, input_text, output_text, noun_list    
+
 function DataLoader:gen_test_data(j1, j2)
     local images = torch.CudaTensor(j2 - j1 + 1, self.att_size, self.feat_size)
     local fc7_images = torch.CudaTensor(j2 - j1 + 1, self.fc7_size)
@@ -172,6 +275,16 @@ function DataLoader:gen_test_data(j1, j2)
         fc7_images[i - j1 + 1]:copy(torch.load(fc7_file))
     end
     return images, fc7_images
+end
+
+function DataLoader:gen_test_jpg(j1, j2)
+    local jpg = torch.CudaTensor(j2 - j1 + 1, 3, 224, 224)
+    for i = j1, j2 do
+        local id = self.val_set[i]
+        local jpg_file = self.id2jpg[id]
+        jpg[i - j1 + 1]:copy(extractHook(jpg_file))
+    end
+    return jpg
 end
 
                 

@@ -33,12 +33,19 @@ function M.parse(arg)
     cmd:option('-train_feat', 'train2014_features_vgg_vd19_conv5', 'Path to pre-extracted training image feature')
     cmd:option('-val_feat', 'val2014_features_vgg_vd19_conv5', 'Path to pre-extracted validation image feature')
     cmd:option('-test_feat', 'test2014_features_vgg_vd19_conv5_2nd', 'Path to pre-extracted test image feature')
+
     cmd:option('-train_fc7', 'train2014_features_vgg_vd19_fc7', 'Path to pre-extracted training fully connected 7')
     cmd:option('-val_fc7', 'val2014_features_vgg_vd19_fc7', 'Path to pre-extracted validation fully connected 7')
     cmd:option('-test_fc7', 'test2014_features_vgg_vd19_fc7_2nd', 'Path to pre-extracted test fully connected 7')
+
     -- cmd:option('-train_fc7', 'train2014_features_googlenet', 'Path to pre-extracted training fully connected 7')
     -- cmd:option('-val_fc7', 'val2014_features_googlenet', 'Path to pre-extracted validation fully connected 7')
     -- cmd:option('-test_fc7', 'test2014_features_googlenet', 'Path to pre-extracted test fully connected 7')
+
+    cmd:option('-train_jpg', 'train2014')
+    cmd:option('-val_jpg', 'val2014')
+    cmd:option('-test_jpg', 'test2014')
+
     cmd:option('-train_anno', 'annotations/captions_train2014.json', 'Path to training image annotaion file')
     cmd:option('-val_anno', 'annotations/captions_val2014.json', 'Path to validation image annotaion file')
     cmd:option('-cat_file', 'annotations/cats.parsed.txt', 'Path to the category file')
@@ -58,10 +65,16 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', false, 'whether save model file?')
-    cmd:option('-save_file_name', 'att.lstm.vgg.w10.noun.model', 'file name for saving model')
+    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file_name', 'copy.fine.vgg.all.val.8.w10.noun.model', 'file name for saving model')
+    cmd:option('-save_conv5_name', 'copy.fine.vgg.conv5.model')
+    cmd:option('-save_fc7_name', 'copy.fine.vgg.fc7.model')
+
     cmd:option('-load_file', true, 'whether load model file?')
-    cmd:option('-load_file_name', 'att.lstm.vgg.w10.noun.model')
+    cmd:option('-load_file_name', 'copy.all.val.8.w10.noun.model')
+    cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
+    cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
+
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     
@@ -72,7 +85,7 @@ function M.parse(arg)
     cmd:option('-beam_size', 3, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
-    cmd:option('-test_mode', true, 'eval on test set if true')
+    cmd:option('-test_mode', false, 'eval on test set if true')
     cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
@@ -82,6 +95,8 @@ function M.parse(arg)
     if opt.use_cat then opt.use_noun = false end
     if opt.server_test_mode then opt.test_mode = false end
     if opt.server_train_mode then opt.test_mode = false end
+    opt.jpg = false
+    if opt.model_pack == 'reason_att_copy_finetune' then opt.jpg = true end
     return opt
 end
 
