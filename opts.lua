@@ -58,7 +58,7 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'att.lstm.vgg.w10.noun.model', 'file name for saving model')
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_file_name', 'att.lstm.vgg.w10.noun.model')
