@@ -256,10 +256,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         grad_params:zero()
 
         local att_seq = input2conv5:forward(jpg)
+        att_seq = att_seq:reshape(att_seq:size(1), opt.feat_size, opt.att_size):transpose(2, 3)
         local fc7_images = conv52fc7:forward(att_seq)
-        print(jpg:size())
-        print(att_seq:size())
-        print(fc7_images:size())
 
         local image_map
         if opt.fc7_size ~= opt.lstm_size then
@@ -347,7 +345,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             local d_fc7 = d_image_map
             if opt.fc7_size ~= opt.lstm_size then d_fc7 = model.linear:backward(fc7_images, d_image_map) end
             local d_conv5 = conv52fc7:backward(att_seq, d_fc7)
-            d_conv5:add(d_att_seq)
+            d_conv5:add(d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), self.feat_size, 14, 14))
             input2conv5:backward(d_conv5)
         end
         
