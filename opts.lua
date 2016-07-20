@@ -63,7 +63,7 @@ function M.parse(arg)
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 0.01, 'Initial learning rate')
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
-    cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
+    cmd:option('-max_eval_batch', 3, 'max number of instances when calling comp error. 20000 = 4000 * 5') -- 50
 
     cmd:option('-save_file', true, 'whether save model file?')
     cmd:option('-save_file_name', 'copy.fine.vgg.all.val.8.w10.noun.model', 'file name for saving model')
