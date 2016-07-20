@@ -60,8 +60,8 @@ function M.parse(arg)
 
     cmd:option('-save_file', true, 'whether save model file?')
     cmd:option('-save_file_name', 'att.lstm.vgg.w10.noun.model', 'file name for saving model')
-    cmd:option('-load_file', false, 'whether load model file?')
-    cmd:option('-load_file_name', 'reason.att.8.model')
+    cmd:option('-load_file', true, 'whether load model file?')
+    cmd:option('-load_file_name', 'att.lstm.vgg.w10.noun.model')
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     
@@ -72,7 +72,7 @@ function M.parse(arg)
     cmd:option('-beam_size', 3, 'Beam size in beam search')
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
-    cmd:option('-test_mode', false, 'eval on test set if true')
+    cmd:option('-test_mode', true, 'eval on test set if true')
     cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
