@@ -42,9 +42,9 @@ function M.parse(arg)
     -- cmd:option('-val_fc7', 'val2014_features_googlenet', 'Path to pre-extracted validation fully connected 7')
     -- cmd:option('-test_fc7', 'test2014_features_googlenet', 'Path to pre-extracted test fully connected 7')
 
-    cmd:option('-train_jpg', 'train2014')
-    cmd:option('-val_jpg', 'val2014')
-    cmd:option('-test_jpg', 'test2014')
+    cmd:option('-train_jpg', 'train2014_jpg')
+    cmd:option('-val_jpg', 'val2014_jpg')
+    cmd:option('-test_jpg', 'test2014_jpg')
 
     cmd:option('-train_anno', 'annotations/captions_train2014.json', 'Path to training image annotaion file')
     cmd:option('-val_anno', 'annotations/captions_val2014.json', 'Path to validation image annotaion file')
