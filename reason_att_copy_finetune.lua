@@ -256,7 +256,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         grad_params:zero()
 
         local conv5 = input2conv5:forward(jpg)
-        local att_seq = conv5:reshape(conv5:size(1), opt.feat_size, opt.att_size):transpose(2, 3)
+        local att_seq = torch.CudaTensor(conv5:size(1), opt.att_size, opt.feat_size)
+        att_seq:copy(conv5:reshape(conv5:size(1), opt.feat_size, opt.att_size):transpose(2, 3))
         local fc7_images = conv52fc7:forward(conv5)
 
         local image_map
