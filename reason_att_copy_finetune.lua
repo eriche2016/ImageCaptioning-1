@@ -373,12 +373,16 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local index = torch.randperm(#batches)
         for i = 1, #batches do
             jpg, input_text, output_text, noun_list = dataloader:gen_train_jpg(batches[index[i]])
+            print('before adagrad')
             optim.adagrad(feval, params, optim_state)
+            print('after adagrad')
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
                 train_loss, train_loss_2 = comp_error(batches)
+                print('after train_loss')
                 val_loss, val_loss_2 = comp_error(val_batches)
+                print('after val_loss')
                 print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
                 collectgarbage()
             end
