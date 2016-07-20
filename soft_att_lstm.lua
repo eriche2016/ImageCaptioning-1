@@ -287,7 +287,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
 
         local reason_pool
-        local loss_2
+        local loss_2 = 0
         if opt.use_noun then
             reason_pool = model.pooling:forward(reason_pred_mat):float()
             local t_loss = model.reason_criterion:forward(reason_pool, noun_list) * opt.reason_weight
