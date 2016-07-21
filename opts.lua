@@ -61,13 +61,13 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 1e-2, 'Initial learning rate') -- 0.01
+    cmd:option('-LR', 1e-3, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'copy.server.6000.1e-2.vgg.all.val.8.w10.noun.model', 'file name for saving model')
-    cmd:option('-save_conv5_name', 'copy.server.6000.1e-2.fine.vgg.conv5.model')
+    cmd:option('-save_file_name', 'copy.server.6000.1e-3.vgg.all.val.8.w10.noun.model', 'file name for saving model')
+    cmd:option('-save_conv5_name', 'copy.server.6000.1e-3.fine.vgg.conv5.model')
     cmd:option('-save_fc7_name', 'copy.server.6000.1e02.fine.vgg.fc7.model')
 
     cmd:option('-load_file', true, 'whether load model file?')
