@@ -203,6 +203,9 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
+    local input2conv5 = torch.load('models/' .. opt.load_conv5_name)
+    local conv52fc7 = torch.load('models/' .. opt.load_fc7_name)
+
     local params, grad_params
     local model_list
     if opt.lstm_size ~= opt.fc7_size then
@@ -219,6 +222,9 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             model_list = {model.emb, model.lstm, model.softmax}
         end
     end
+    table.insert(model_list, input2conv5)
+    table.insert(model_list, conv52fc7)
+    
     for t = 1, opt.reason_step do
         table.insert(model_list, model.soft_att_lstm[t])
     end
@@ -244,8 +250,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
     end
 
-    local input2conv5 = torch.load('models/' .. opt.load_conv5_name)
-    local conv52fc7 = torch.load('models/' .. opt.load_fc7_name)
 
     local jpg, input_text, output_text, noun_list
 
@@ -343,12 +347,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     {dreason_c[t], dreason_h[t]}))
                 d_att_seq:add(d_att_seq_t)
             end
-            -- local d_image_map = dreason_c[0] + dreason_h[0]
-            -- local d_fc7 = d_image_map
-            -- if opt.fc7_size ~= opt.lstm_size then d_fc7 = model.linear:backward(fc7_images, d_image_map) end
-            -- local d_conv5 = conv52fc7:backward(conv5, d_fc7)
-            -- d_conv5:add(d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14))
-            -- input2conv5:backward(jpg, d_conv5)
+            local d_image_map = dreason_c[0] + dreason_h[0]
+            local d_fc7 = d_image_map
+            if opt.fc7_size ~= opt.lstm_size then d_fc7 = model.linear:backward(fc7_images, d_image_map) end
+            local d_conv5 = conv52fc7:backward(conv5, d_fc7)
+            d_conv5:add(d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14))
+            input2conv5:backward(jpg, d_conv5)
         end
         
         grad_params:clamp(-5, 5)
