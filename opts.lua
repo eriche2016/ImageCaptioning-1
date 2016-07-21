@@ -66,9 +66,9 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'copy.server.cnn.fine.vgg.all.val.8.w10.noun.model', 'file name for saving model')
-    cmd:option('-save_conv5_name', 'copy.server.cnn.fine.vgg.conv5.model')
-    cmd:option('-save_fc7_name', 'copy.server.cnn.fine.vgg.fc7.model')
+    cmd:option('-save_file_name', 'copy.server.sgd.fine.vgg.all.val.8.w10.noun.model', 'file name for saving model')
+    cmd:option('-save_conv5_name', 'copy.server.sgd.fine.vgg.conv5.model')
+    cmd:option('-save_fc7_name', 'copy.server.sgd.fine.vgg.fc7.model')
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_file_name', 'copy.server.vgg.all.val.8.w10.noun.model')

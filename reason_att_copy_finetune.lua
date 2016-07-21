@@ -228,7 +228,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for t = 1, opt.reason_step do
         table.insert(model_list, model.soft_att_lstm[t])
     end
-    model_list = {input2conv5, conv52fc7}
+    -- model_list = {input2conv5, conv52fc7}
 
     params, grad_params = model_utils.combine_all_parameters(unpack(model_list))
     local clones = {}
@@ -380,7 +380,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local index = torch.randperm(#batches)
         for i = 1, #batches do
             jpg, input_text, output_text, noun_list = dataloader:gen_train_jpg(batches[index[i]])
-            optim.adagrad(feval, params, optim_state)
+            -- optim.adagrad(feval, params, optim_state)
+            optim.sgd(feval, params, optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
