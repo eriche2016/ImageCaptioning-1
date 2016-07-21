@@ -228,7 +228,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for t = 1, opt.reason_step do
         table.insert(model_list, model.soft_att_lstm[t])
     end
-    model_list = {input2conv5, conv52fc7}
+    
     params, grad_params = model_utils.combine_all_parameters(unpack(model_list))
     local clones = {}
     anno_utils = dataloader.anno_utils
