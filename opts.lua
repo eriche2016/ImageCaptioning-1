@@ -25,7 +25,7 @@ function M.parse(arg)
     cmd:option('-reason_weight', 10.0, 'weight of reasoning loss')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'reason_att_copy_finetune', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -61,7 +61,7 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 0.001, 'Initial learning rate') -- 0.01
+    cmd:option('-LR', 1e-6, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.')
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
@@ -86,7 +86,7 @@ function M.parse(arg)
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
     cmd:option('-test_mode', false, 'eval on test set if true')
-    cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
+    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
