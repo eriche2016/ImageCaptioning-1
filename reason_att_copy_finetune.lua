@@ -347,7 +347,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             local d_fc7 = d_image_map
             if opt.fc7_size ~= opt.lstm_size then d_fc7 = model.linear:backward(fc7_images, d_image_map) end
             local d_conv5 = conv52fc7:backward(conv5, d_fc7)
-            d_conv5:add(d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14))
+            -- d_conv5:add(d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14))
             input2conv5:backward(jpg, d_conv5)
         end
         
@@ -374,7 +374,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local index = torch.randperm(#batches)
         for i = 1, #batches do
             jpg, input_text, output_text, noun_list = dataloader:gen_train_jpg(batches[index[i]])
-            optim.adam(feval, params, optim_state)
+            optim.adagrad(feval, params, optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
