@@ -203,7 +203,6 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
-    collectgarbage()
     local input2conv5 = torch.load('models/' .. opt.load_conv5_name)
     local conv52fc7 = torch.load('models/' .. opt.load_fc7_name)
 
