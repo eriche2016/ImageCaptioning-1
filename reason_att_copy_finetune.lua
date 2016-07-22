@@ -471,7 +471,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 if bleu_4 > max_bleu_4 then
                     max_bleu_4 = bleu_4
                     if opt.save_file then
-                        model:clearState()
                         input2conv5:clearState()
                         conv52fc7:clearState()
                         model_utils.clean_gradients(input2conv5)
