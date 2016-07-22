@@ -72,8 +72,8 @@ function M.parse(arg)
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_file_name', 'copy.server.ada1e-4.fine.vgg.all.val.8.w10.noun.model')
-    cmd:option('-load_conv5_name', 'copy.server.ada1e-4.fine.vgg.conv5.model')
-    cmd:option('-load_fc7_name', 'copy.server.ada1e-4.fine.vgg.fc7.model')
+    cmd:option('-load_conv5_name', 'clear.copy.server.ada1e-4.fine.vgg.conv5.model')
+    cmd:option('-load_fc7_name', 'clear.copy.server.ada1e-4.fine.vgg.fc7.model')
 
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
