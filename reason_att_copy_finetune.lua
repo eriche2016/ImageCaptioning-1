@@ -2,7 +2,7 @@ require 'nn'
 require 'cunn'
 require 'nngraph'
 require 'optim'
--- require 'cudnn'
+require 'cudnn'
 local model_utils = require 'utils.model_utils'
 local eval_utils = require 'eval.neuraltalk2.misc.utils'
 local tablex = require 'pl.tablex'
@@ -206,6 +206,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local input2conv5 = torch.load('models/' .. opt.load_conv5_name)
     local conv52fc7 = torch.load('models/' .. opt.load_fc7_name)
 
+    conv52fc7.modules[-2].p = opt.dropout
+
     local params, grad_params
     local model_list
     if opt.lstm_size ~= opt.fc7_size then
@@ -257,6 +259,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
     local function feval(params_, update)
         if update == nil then update = true end
+        if update then conv52fc7:training() else conv52fc7:evaluate() end
         if params_ ~= params then
             params:copy(params_)
         end
@@ -399,6 +402,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 while j1 <= #dataloader.val_set do
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                     jpg = dataloader:gen_test_jpg(j1, j2)
+
+                    conv52fc7:evaluate()
 
                     local conv5 = input2conv5:forward(jpg)
                     local att_seq = torch.CudaTensor(conv5:size(1), opt.att_size, opt.feat_size)
