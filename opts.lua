@@ -9,7 +9,7 @@ function M.parse(arg)
 
     ------------ Model options ----------------------
     cmd:option('-emb_size', 100, 'Word embedding size')
-    cmd:option('-lstm_size', 2048, 'LSTM size') -- 1024
+    cmd:option('-lstm_size', 1024, 'LSTM size') -- 1024
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
     cmd:option('-fc7_size', 4096, 'the dimension of fc7')
@@ -71,7 +71,7 @@ function M.parse(arg)
     cmd:option('-save_fc7_name', 'test.clean.fc7.model')
 
     cmd:option('-load_file', true, 'whether load model file?')
-    cmd:option('-load_file_name', 'soft.att.lstm.2048.model')
+    cmd:option('-load_file_name', 'concat.1024.512.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
