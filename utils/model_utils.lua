@@ -156,4 +156,16 @@ function model_utils.clone_many_times(net, T)
     return clones
 end
 
+function model_utils.clean_gradients(net)
+    local module_list = net:listModules()
+    for k, m in ipairs(module_list) do
+        if m.weight and m.gradWeight then
+            m.gradWeight = nil
+        end
+        if m.bias and m.gradBias then
+            m.gradBias = nil
+        end
+    end
+end
+
 return model_utils
