@@ -9,7 +9,7 @@ function M.parse(arg)
 
     ------------ Model options ----------------------
     cmd:option('-emb_size', 100, 'Word embedding size')
-    cmd:option('-lstm_size', 1024, 'LSTM size')
+    cmd:option('-lstm_size', 2048, 'LSTM size') -- 1024
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
     cmd:option('-fc7_size', 4096, 'the dimension of fc7')
