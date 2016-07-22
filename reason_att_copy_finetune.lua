@@ -206,9 +206,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local input2conv5 = torch.load('models/' .. opt.load_conv5_name)
     local conv52fc7 = torch.load('models/' .. opt.load_fc7_name)
 
-    -- conv52fc7.modules[-2].p = opt.dropout
-    print(conv52fc7)
-
     local params, grad_params
     local model_list
     if opt.lstm_size ~= opt.fc7_size then

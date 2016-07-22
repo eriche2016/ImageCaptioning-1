@@ -77,7 +77,6 @@ function M.parse(arg)
 
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
-    cmd:option('-dropout', 0.5, 'dropout rate')
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
