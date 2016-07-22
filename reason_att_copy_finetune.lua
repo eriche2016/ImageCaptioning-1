@@ -2,7 +2,7 @@ require 'nn'
 require 'cunn'
 require 'nngraph'
 require 'optim'
--- require 'cudnn'
+require 'cudnn'
 local model_utils = require 'utils.model_utils'
 local eval_utils = require 'eval.neuraltalk2.misc.utils'
 local tablex = require 'pl.tablex'
@@ -473,8 +473,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     if opt.save_file then
                         input2conv5:clearState()
                         conv52fc7:clearState()
-                        model_utils.clean_gradients(input2conv5)
-                        model_utils.clean_gradients(conv52fc7)
+                        -- model_utils.clean_gradients(input2conv5)
+                        -- model_utils.clean_gradients(conv52fc7)
                         torch.save('models/' .. opt.save_file_name, model)
                         torch.save('models/' .. opt.save_conv5_name, input2conv5)
                         torch.save('models/' .. opt.save_fc7_name, conv52fc7)
