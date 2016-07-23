@@ -58,7 +58,7 @@ function M.parse(arg)
     cmd:option('-val_anno', 'annotations/captions_val2014.json', 'Path to validation image annotaion file')
     cmd:option('-cat_file', 'annotations/cats.parsed.txt', 'Path to the category file')
     cmd:option('-nGPU', 1, 'Index of GPU to use, 0 means CPU')
-    cmd:option('-seed', 123, 'Random number seed')
+    cmd:option('-seed', 13, 'Random number seed')
 
     cmd:option('-id2noun_file', 'data/annotations/id2nouns.txt', 'Path to the id 2 nouns file')
     cmd:option('-arctic_dir', 'arctic-captions/splits', 'Path to index file')
@@ -74,7 +74,7 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'splitfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'seed13.splitfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
