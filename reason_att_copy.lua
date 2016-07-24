@@ -54,32 +54,13 @@ function M.soft_att_lstm_concat(opt)
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
     ------------ End of attention part -----------
-
-    local bn_wx, bn_wh, bn_att
-    if opt.bn then
-        bn_wx = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
-        bn_wh = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
-        bn_att = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
-
-        -- initialise beta=0, gamma=0.1
-        bn_wx.weight:fill(0.1)
-        bn_wx.bias:zero()
-        bn_wh.weight:fill(0.1)
-        bn_wh.bias:zero()
-        bn_att.weight:fill(0.1)
-        bn_att.bias:zero()
-    else
-        bn_wx = nn.Identity()
-        bn_wh = nn.Identity()
-        bn_att = nn.Identity()
-    end
     
     --- Input to LSTM
-    local att_add = bn_att(nn.Linear(feat_size, 4 * rnn_size)(att_res))   -- batch * (4*rnn_size) <- batch * feat_size
+    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
-    local i2h = bn_wx(nn.Linear(input_size, 4 * rnn_size)(dx))
-    local h2h = bn_wh(nn.Linear(rnn_size, 4 * rnn_size)(prev_h))
+    local i2h = nn.Linear(input_size, 4 * rnn_size)(dx)
+    local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
     -- test
     -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
@@ -150,19 +131,23 @@ function M.soft_att_lstm_concat_nox(opt)
 
     -------------- End of attention part -----------
 
-    local bn_wh, bn_att
+    local bn_wh, bn_att, bn_c
     if opt.bn then
         bn_wh = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
         bn_att = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
+        bn_c = nn.BatchNormalization(rnn_size, 1e-5, 0.1, true)
 
         -- initialise beta=0, gamma=0.1
         bn_wh.weight:fill(0.1)
         bn_wh.bias:zero()
         bn_att.weight:fill(0.1)
         bn_att.bias:zero()
+        bn_c.weight:fill(0.1)
+        bn_c.bias:zero()
     else
         bn_wh = nn.Identity()
         bn_att = nn.Identity()
+        bn_c = nn.Identity()
     end
     
     --- Input to LSTM
@@ -190,7 +175,7 @@ function M.soft_att_lstm_concat_nox(opt)
         nn.CMulTable()({forget_gate, prev_c}),
         nn.CMulTable()({in_gate,     in_transform})
     })
-    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
+    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(bn_c(next_c))}) -- batch * rnn_size
     
     return nn.gModule({att_seq, prev_c, prev_h}, {next_c, next_h})
 end
