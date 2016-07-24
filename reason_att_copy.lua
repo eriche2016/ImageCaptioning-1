@@ -210,8 +210,19 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
     local att_seq, fc7_images, input_text, output_text, noun_list
 
+    local function evaluate():
+        for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
+        for t = 1, max_t do clones.lstm[t]:evaluate() end
+    end
+
+    local function training():
+        for t = 1, opt.reason_step do clones.soft_att_lstm[t]:training() end
+        for t = 1, max_t do clones.lstm[t]:training() end
+    end
+
     local function feval(params_, update)
         if update == nil then update = true end
+        if update then training() else evaluate() end
         if params_ ~= params then
             params:copy(params_)
         end
@@ -334,6 +345,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             if i == 1 or i % opt.eval_period == 0 then
                 local captions = {}
                 local j1 = 1
+                evaluate()
                 while j1 <= #dataloader.val_set do
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                     att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
