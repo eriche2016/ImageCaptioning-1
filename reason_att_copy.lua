@@ -58,9 +58,24 @@ function M.soft_att_lstm_concat(opt)
     --- Input to LSTM
     local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
+    local bn_wx, bn_wh, bn_c
+    if opt.bn then
+        bn_wx = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
+        bn_wh = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
+
+        -- initialise beta=0, gamma=0.1
+        bn_wx.weight:fill(0.1)
+        bn_wx.bias:zero()
+        bn_wh.weight:fill(0.1)
+        bn_wh.bias:zero()
+    else
+        bn_wx = nn.Identity()
+        bn_wh = nn.Identity()
+    end
+
     ------------- LSTM main part --------------------
-    local i2h = nn.Linear(input_size, 4 * rnn_size)(dx)
-    local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
+    local i2h = bn_wx(nn.Linear(input_size, 4 * rnn_size)(dx))
+    local h2h = bn_wh(nn.Linear(rnn_size, 4 * rnn_size)(prev_h))
     
     -- test
     -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
