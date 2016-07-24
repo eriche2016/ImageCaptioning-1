@@ -210,12 +210,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
     local att_seq, fc7_images, input_text, output_text, noun_list
 
-    local function evaluate():
+    local function evaluate()
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
         for t = 1, max_t do clones.lstm[t]:evaluate() end
     end
 
-    local function training():
+    local function training()
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:training() end
         for t = 1, max_t do clones.lstm[t]:training() end
     end
