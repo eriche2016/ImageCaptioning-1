@@ -20,12 +20,12 @@ function M.parse(arg)
     cmd:option('-test_size', 4000, 'Test set size')
 
     cmd:option('-use_attention', true, 'Use attention or not')
-    cmd:option('-use_noun', true, 'Use noun or not') -- true
+    cmd:option('-use_noun', false, 'Use noun or not') -- true
     cmd:option('-use_cat', false, 'Use category or not. If true then will disgard words.')
     cmd:option('-reason_weight', 10.0, 'weight of reasoning loss')
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'soft_att_lstm', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -69,12 +69,12 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 1e-2, 'Initial learning rate') -- 0.01
+    cmd:option('-LR', 0, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 17, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'trunc17.seed13.splitfixed.softatt.lstm.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file', false, 'whether save model file?')
+    cmd:option('-save_file_name', 'splitfixed.softatt.lstm.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
