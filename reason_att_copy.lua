@@ -7,46 +7,6 @@ local eval_utils = require 'eval.neuraltalk2.misc.utils'
 local tablex = require 'pl.tablex'
 
 local M = {}
--- local ATT_NEXT_H = false
-
--- cmd:option('-emb_size', 100, 'Word embedding size')
--- cmd:option('-lstm_size', 4096, 'LSTM size')
--- cmd:option('-word_cnt', 9520, 'Vocabulary size')
--- cmd:option('-att_size', 196, 'Attention size')
--- cmd:option('-feat_size', 512, 'Feature size for each attention')
--- cmd:option('-batch_size', 32, 'Batch size in SGD')
-function M.lstm(opt)
-    -- Model parameters
-    local rnn_size = opt.lstm_size
-    local input_size = opt.emb_size
-
-    local x = nn.Identity()()         -- batch * input_size -- embedded caption at a specific step
-    local prev_c = nn.Identity()()
-    local prev_h = nn.Identity()()
-
-    ------------- LSTM main part --------------------
-    local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
-    local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
-
-    local all_input_sums = nn.CAddTable()({i2h, h2h})
-
-    local sigmoid_chunk = nn.Narrow(2, 1, 3 * rnn_size)(all_input_sums)
-    sigmoid_chunk = nn.Sigmoid()(sigmoid_chunk)
-    local in_gate = nn.Narrow(2, 1, rnn_size)(sigmoid_chunk)
-    local forget_gate = nn.Narrow(2, rnn_size + 1, rnn_size)(sigmoid_chunk)
-    local out_gate = nn.Narrow(2, 2 * rnn_size + 1, rnn_size)(sigmoid_chunk)
-
-    local in_transform = nn.Narrow(2, 3 * rnn_size + 1, rnn_size)(all_input_sums)
-    in_transform = nn.Tanh()(in_transform)
-
-    local next_c = nn.CAddTable()({
-        nn.CMulTable()({forget_gate, prev_c}),
-        nn.CMulTable()({in_gate,     in_transform})
-    })
-    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
-    
-    return nn.gModule({x, prev_c, prev_h}, {next_c, next_h})
-end
 
 -- Attention model, concat hidden and image feature
 function M.soft_att_lstm_concat(opt)
@@ -62,8 +22,11 @@ function M.soft_att_lstm_concat(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
+    local d_att_seq = nn.Dropout(opt.dropout)(att_seq)
+    local dx = nn.Dropout(opt.dropout)(x)
+
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
+    local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
@@ -87,7 +50,7 @@ function M.soft_att_lstm_concat(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * feat_size * att_size
+    local att_seq_t = nn.Transpose({2, 3})(d_att_seq)     -- batch * feat_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
     ------------ End of attention part -----------
@@ -96,7 +59,7 @@ function M.soft_att_lstm_concat(opt)
     local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
-    local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
+    local i2h = nn.Linear(input_size, 4 * rnn_size)(dx)
     local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
     -- test
@@ -136,8 +99,10 @@ function M.soft_att_lstm_concat_nox(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
+    local d_att_seq = nn.Dropout(opt.dropout)(att_seq)
+
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
+    local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
@@ -161,7 +126,7 @@ function M.soft_att_lstm_concat_nox(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
+    local att_seq_t = nn.Transpose({2, 3})(d_att_seq)     -- batch * rnn_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
 
     -------------- End of attention part -----------
