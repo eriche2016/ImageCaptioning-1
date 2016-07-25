@@ -131,24 +131,7 @@ function M.soft_att_lstm_concat_nox(opt)
 
     -------------- End of attention part -----------
 
-    local bn_wh, bn_att, bn_c
-    if opt.bn then
-        bn_wh = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
-        bn_att = nn.BatchNormalization(4 * rnn_size, 1e-5, 0.1, true)
-        bn_c = nn.BatchNormalization(rnn_size, 1e-5, 0.1, true)
-
-        -- initialise beta=0, gamma=0.1
-        bn_wh.weight:fill(0.1)
-        bn_wh.bias:zero()
-        bn_att.weight:fill(0.1)
-        bn_att.bias:zero()
-        bn_c.weight:fill(0.1)
-        bn_c.bias:zero()
-    else
-        bn_wh = nn.Identity()
-        bn_att = nn.Identity()
-        bn_c = nn.Identity()
-    end
+    local bn_wh, bn_att, bn_c = nn.Identity(), nn.Identity(), nn.Identity()
     
     --- Input to LSTM
     local att_add = bn_att(nn.Linear(feat_size, 4 * rnn_size)(att_res))   -- batch * (4*rnn_size) <- batch * feat_size
@@ -227,7 +210,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
     end 
 
-    local att_seq, fc7_images, input_text, output_text, noun_list
+    local att_seq, fc7_images, input_text, output_text, noun_list, fc7_google_images
 
     local function evaluate()
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
@@ -253,6 +236,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         else
             image_map = fc7_images
         end
+        if opt.use_google then image_map:add(fc7_google_images) end
 
         local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
         local reason_c = {[0] = image_map}
@@ -338,7 +322,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local loss_2 = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
-            att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[j])
+            att_seq, fc7_images, input_text, output_text, noun_list, fc7_google_images = dataloader:gen_train_data(batches[j])
             local t_loss, t_loss_2 = feval(params, false)
             loss = loss + t_loss
             loss_2 = loss_2 + t_loss_2
@@ -350,7 +334,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for epoch = 1, opt.nEpochs do
         local index = torch.randperm(#batches)
         for i = 1, #batches do
-            att_seq, fc7_images, input_text, output_text, noun_list = dataloader:gen_train_data(batches[index[i]])
+            att_seq, fc7_images, input_text, output_text, noun_list, fc7_google_images = dataloader:gen_train_data(batches[index[i]])
             optim.adagrad(feval, params, optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
@@ -375,6 +359,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     else
                         image_map = fc7_images
                     end
+                    if opt.use_google then image_map:add(fc7_google_images) end
 
                     local reason_c = {[0] = image_map}
                     local reason_h = {[0] = image_map}

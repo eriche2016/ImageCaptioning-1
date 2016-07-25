@@ -17,6 +17,9 @@ function DataLoader:__init(opt)
     self.fc7_dirs = {}
     table.insert(self.fc7_dirs, paths.concat(opt.data, opt.train_fc7))
     table.insert(self.fc7_dirs, paths.concat(opt.data, opt.val_fc7))
+    self.google_fc7_dirs = {}
+    table.insert(self.google_fc7_dirs, paths.concat(opt.data, opt.train_fc7_google))
+    table.insert(self.google_fc7_dirs, paths.concat(opt.data, opt.val_fc7_google))
     self.cat_dir = paths.concat(opt.data, opt.cat_file)
 
     self.att_size = opt.att_size
@@ -32,6 +35,7 @@ function DataLoader:__init(opt)
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
     self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')
+    self.id2fc7_google, _, _ = anno_utils.read_dataset(self.google_fc7_dirs, '.dat')
     self.id2captions, self.word2index, self.index2word, self.word_cnt = anno_utils.read_captions(self.anno_dirs, nil)
     if opt.use_cat then
         self.id2cats, self.cat_cnt = anno_utils.read_cats(self.cat_dir)
@@ -128,6 +132,7 @@ function DataLoader:gen_train_data(batch)
     local input_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local output_text = torch.CudaTensor(#batch, #batch[1][3] + 1)
     local fc7_images = torch.CudaTensor(#batch, self.fc7_size)
+    local fc7_google_images = torch.CudaTensor(#batch, 1024)
     local noun_list
     if self.use_cat then
         noun_list = torch.Tensor(#batch, self.cat_cnt):zero()
@@ -143,9 +148,11 @@ function DataLoader:gen_train_data(batch)
         -- local file = files[id2index[id]]
         local file = self.id2file[id]
         local fc7_file = self.id2fc7_file[id]
+        local fc7_google_file = self.id2fc7_google[id]
         -- from 512*14*14
         images[i]:copy(torch.load(file):reshape(self.feat_size, self.att_size):transpose(1, 2))
         fc7_images[i]:copy(torch.load(fc7_file))
+        fc7_google_images[i]:copy(torch.load(fc7_google_file))
         local word_dict = {}
         for j = 1, #caption do
             input_text[i][j + 1] = caption[j]
@@ -170,7 +177,7 @@ function DataLoader:gen_train_data(batch)
             end
         end
     end
-    return images, fc7_images, input_text, output_text, noun_list
+    return images, fc7_images, input_text, output_text, noun_list, fc7_google_images
 end
 
 function DataLoader:gen_train_jpg(batch)
@@ -224,14 +231,17 @@ end
 function DataLoader:gen_test_data(j1, j2)
     local images = torch.CudaTensor(j2 - j1 + 1, self.att_size, self.feat_size)
     local fc7_images = torch.CudaTensor(j2 - j1 + 1, self.fc7_size)
+    local fc7_google_images = torch.CudaTensor(j2 - j1 + 1, 1024)
     for i = j1, j2 do
         local id = self.val_set[i]
         local file = self.id2file[id]
         local fc7_file = self.id2fc7_file[id]
+        local fc7_google_file = self.id2fc7_google[id]
         images[i - j1 + 1]:copy(torch.load(file):reshape(self.feat_size, self.att_size):transpose(1, 2))
         fc7_images[i - j1 + 1]:copy(torch.load(fc7_file))
+        fc7_google_images[i - j1 + 1]:copy(torch.load(fc7_google_file))
     end
-    return images, fc7_images
+    return images, fc7_images, fc7_google_images
 end
 
 function DataLoader:gen_test_jpg(j1, j2)
