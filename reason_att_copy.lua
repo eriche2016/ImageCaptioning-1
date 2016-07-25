@@ -351,7 +351,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 evaluate()
                 while j1 <= #dataloader.val_set do
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
-                    att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
+                    att_seq, fc7_images, fc7_google_images = dataloader:gen_test_data(j1, j2)
 
                     local image_map
                     if opt.lstm_size ~= opt.fc7_size then
@@ -359,7 +359,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     else
                         image_map = fc7_images
                     end
-                    print(image_map:size(), fc7_google_images:size())
                     if opt.use_google then image_map:add(fc7_google_images) end
 
                     local reason_c = {[0] = image_map}
