@@ -359,6 +359,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     else
                         image_map = fc7_images
                     end
+                    print(image_map:size(), fc7_google_images:size())
                     if opt.use_google then image_map:add(fc7_google_images) end
 
                     local reason_c = {[0] = image_map}
