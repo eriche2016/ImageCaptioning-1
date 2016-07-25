@@ -8,7 +8,7 @@ function M.parse(arg)
     cmd:text('Options:')
 
     ------------ Model options ----------------------
-    cmd:option('-emb_size', 512, 'Word embedding size') -- 100
+    cmd:option('-emb_size', 100, 'Word embedding size') -- 100
     cmd:option('-lstm_size', 1024, 'LSTM size') -- 1024
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
@@ -69,17 +69,17 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 1e-2, 'Initial learning rate') -- 0.01
+    cmd:option('-LR', 0.0, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'e512.seed13.splitfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
-    cmd:option('-load_file', false, 'whether load model file?')
-    cmd:option('-load_file_name', 'splitfixed.softatt.lstm.vgg16.model')
+    cmd:option('-load_file', true, 'whether load model file?')
+    cmd:option('-load_file_name', 'd0.5.seed13.splitfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
