@@ -8,7 +8,7 @@ function M.parse(arg)
     cmd:text('Options:')
 
     ------------ Model options ----------------------
-    cmd:option('-emb_size', 100, 'Word embedding size')
+    cmd:option('-emb_size', 512, 'Word embedding size') -- 100
     cmd:option('-lstm_size', 1024, 'LSTM size') -- 1024
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
@@ -74,7 +74,7 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'bn.seed13.splitfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'e512.seed13.splitfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
@@ -86,7 +86,7 @@ function M.parse(arg)
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     cmd:option('-dropout', 0.0)
-    cmd:option('-bn', true)
+    cmd:option('-bn', false)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
