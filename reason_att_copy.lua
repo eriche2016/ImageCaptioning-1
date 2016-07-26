@@ -238,8 +238,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         end
         local image_google_map
         if opt.use_google then
-            image_google_map = model.google_linear:forward(fc7_google_images)
-            image_map:add(image_google_map)
+            image_map:add(fc7_google_images)
         end
 
         local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
@@ -317,9 +316,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             if opt.fc7_size ~= opt.lstm_size then
                 dreason_c[0]:add(dreason_h[0])
                 model.linear:backward(fc7_images, dreason_c[0])
-                if opt.use_google then
-                    model.google_linear:backward(fc7_google_images, dreason_c[0])
-                end
             end
         end
         
@@ -372,8 +368,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     end
                     local image_google_map
                     if opt.use_google then
-                        image_google_map = model.google_linear:forward(fc7_google_images)
-                        image_map:add(image_google_map)
+                        image_map:add(fc7_google_images)
                     end
 
                     local reason_c = {[0] = image_map}
@@ -468,9 +463,6 @@ function M.create_model(opt)
     if opt.fc7_size ~= opt.lstm_size then
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
-    if opt.use_google then
-        model.google_linear = nn.Linear(1024, opt.lstm_size)
-    end
     if opt.use_noun then
         -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
         model.reason_softmax = nn.Linear(opt.lstm_size, opt.word_cnt)
@@ -488,9 +480,6 @@ function M.create_model(opt)
         model.criterion:cuda()
         if opt.fc7_size ~= opt.lstm_size then
             model.linear:cuda()
-        end
-        if opt.use_google then
-            model.google_linear:cuda()
         end
         if opt.use_noun then
             model.reason_softmax:cuda()
