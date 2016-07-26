@@ -198,7 +198,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for name, proto in pairs(model) do
         print('cloning '.. name)
         if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion'
-            and name ~= 'pooling' then 
+            and name ~= 'pooling' and name ~= 'linear' and name ~= 'google_linear' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
@@ -236,7 +236,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         else
             image_map = fc7_images
         end
-        if opt.use_google then image_map:add(fc7_google_images) end
+        local image_google_map
+        if opt.use_google then
+            image_google_map = model.google_linear:forward(fc7_google_images)
+            image_map:add(image_google_map)
+        end
 
         local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
         local reason_c = {[0] = image_map}
@@ -310,6 +314,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
             end
+            if opt.fc7_size ~= opt.lstm_size then
+                dreason_c[0]:add(dreason_h[0])
+                model.linear:backward(fc7_images, dreason_c[0])
+                if opt.use_google then
+                    model.google_linear:backward(fc7_google_images, dreason_c[0])
+                end
+            end
         end
         
         grad_params:clamp(-5, 5)
@@ -359,7 +370,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     else
                         image_map = fc7_images
                     end
-                    if opt.use_google then image_map:add(fc7_google_images) end
+                    local image_google_map
+                    if opt.use_google then
+                        image_google_map = model.google_linear:forward(fc7_google_images)
+                        image_map:add(image_google_map)
+                    end
 
                     local reason_c = {[0] = image_map}
                     local reason_h = {[0] = image_map}
@@ -453,6 +468,9 @@ function M.create_model(opt)
     if opt.fc7_size ~= opt.lstm_size then
         model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
+    if opt.use_google then
+        model.google_linear = nn.Linear(1024, opt.lstm_size)
+    end
     if opt.use_noun then
         -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
         model.reason_softmax = nn.Linear(opt.lstm_size, opt.word_cnt)
@@ -470,6 +488,9 @@ function M.create_model(opt)
         model.criterion:cuda()
         if opt.fc7_size ~= opt.lstm_size then
             model.linear:cuda()
+        end
+        if opt.use_google then
+            model.google_linear:cuda()
         end
         if opt.use_noun then
             model.reason_softmax:cuda()
