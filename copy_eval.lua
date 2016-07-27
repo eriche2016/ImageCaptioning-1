@@ -56,14 +56,15 @@ function beam_search(model, dataloader, opt)
     end 
     
     local captions = {}
-    MY_BATCH_NUM = 2 -- 0
+    MY_BATCH_NUM = 0 -- 0
 
     local i = 1
     if MY_BATCH_NUM == 2 then i = 20000 end
     if opt.server_test_mode then
         fout = io.open('server_test/vgg16.' .. MY_BATCH_NUM .. '.txt', 'w')
     end
-    local limit = #dataloader.val_set
+    -- local limit = #dataloader.val_set
+    local limit = 10
     if MY_BATCH_NUM == 1 then limit = 19999 end
     while i <= limit do
         collectgarbage()
