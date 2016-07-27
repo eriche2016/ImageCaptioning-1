@@ -69,12 +69,12 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 1e-2, 'Initial learning rate') -- 0.01
+    cmd:option('-LR', 0, 'Initial learning rate') -- 0.01
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'cnndrop.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'cnnrelu.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
@@ -88,8 +88,8 @@ function M.parse(arg)
     cmd:option('-dropout', 0.0)
     cmd:option('-bn', false)
     cmd:option('-use_google', false)
-    cmd:option('-cnn_relu', false)
-    cmd:option('-cnn_dropout', true)
+    cmd:option('-cnn_relu', true)
+    cmd:option('-cnn_dropout', false)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
