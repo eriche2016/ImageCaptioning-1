@@ -79,7 +79,7 @@ function M.parse(arg)
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
     cmd:option('-load_file', true, 'whether load model file?')
-    cmd:option('-load_file_name', 'cnndrop.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
@@ -89,7 +89,7 @@ function M.parse(arg)
     cmd:option('-bn', false)
     cmd:option('-use_google', false)
     cmd:option('-cnn_relu', false)
-    cmd:option('-cnn_dropout', true)
+    cmd:option('-cnn_dropout', false)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
@@ -99,8 +99,8 @@ function M.parse(arg)
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
     cmd:option('-test_mode', false, 'eval on test set if true')
-    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
-    cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
+    cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
+    cmd:option('-server_test_mode', true, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
     opt.eval_period = math.floor(3000 * 32 / opt.batch_size) * 2

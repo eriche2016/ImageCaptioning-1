@@ -31,6 +31,7 @@ function DataLoader:__init(opt)
     self.use_noun = opt.use_noun
     self.truncate = opt.truncate
     self.use_cat = opt.use_cat
+    self.use_google = opt.use_google
 
     -- Prepare captions
     self.id2file, self.train_ids, self.val_ids = anno_utils.read_dataset(self.feat_dirs, '.dat')
@@ -231,15 +232,18 @@ end
 function DataLoader:gen_test_data(j1, j2)
     local images = torch.CudaTensor(j2 - j1 + 1, self.att_size, self.feat_size)
     local fc7_images = torch.CudaTensor(j2 - j1 + 1, self.fc7_size)
-    local fc7_google_images = torch.CudaTensor(j2 - j1 + 1, 1024)
+    local fc7_google_images
+    if self.use_google then fc7_google_images = torch.CudaTensor(j2 - j1 + 1, 1024) end
     for i = j1, j2 do
         local id = self.val_set[i]
         local file = self.id2file[id]
         local fc7_file = self.id2fc7_file[id]
-        local fc7_google_file = self.id2fc7_google[id]
         images[i - j1 + 1]:copy(torch.load(file):reshape(self.feat_size, self.att_size):transpose(1, 2))
         fc7_images[i - j1 + 1]:copy(torch.load(fc7_file))
-        fc7_google_images[i - j1 + 1]:copy(torch.load(fc7_google_file))
+        if self.use_google then
+            local fc7_google_file = self.id2fc7_google[id]
+            fc7_google_images[i - j1 + 1]:copy(torch.load(fc7_google_file))
+        end
     end
     return images, fc7_images, fc7_google_images
 end

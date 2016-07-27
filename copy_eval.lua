@@ -56,13 +56,16 @@ function beam_search(model, dataloader, opt)
     end 
     
     local captions = {}
-    -- local i = 20000
+    MY_BATCH_NUM = 1
+
     local i = 1
+    if MY_BATCH_NUM == 2 then i = 20000 end
     if opt.server_test_mode then
-        fout = io.open('server_test/captions2.txt', 'w')
+        fout = io.open('server_test/vgg16.' .. MY_BATCH_NUM .. '.txt', 'w')
     end
-    while i <= #dataloader.val_set do
-    -- while i < 20000 do
+    local limit = #dataloader.val_set
+    if MY_BATCH_NUM == 1 then limit = 19999 end
+    while i <= limit do
         collectgarbage()
         local att_seq, fc7_images = dataloader:gen_test_data(i, i)
         local image_map
@@ -205,7 +208,7 @@ function beam_search(model, dataloader, opt)
             end
         end
                   
-        if i <= 10 then
+        if i <= 10 or (i >= 20000 and i <= 20009) then
             print(dataloader.val_set[i], caption)
         end
 
