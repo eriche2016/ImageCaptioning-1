@@ -463,7 +463,7 @@ function M.create_model(opt)
     if opt.fc7_size ~= opt.lstm_size then
         model.linear = nn.Sequential():add(nn.Linear(opt.fc7_size, opt.lstm_size))
         if opt.cnn_relu then model.linear:add(nn.ReLU(true)) end
-        if opt.cnn_dropout then model.linear:add(nn.Dropout()) end
+        if opt.cnn_dropout then model.linear:add(nn.Dropout(0.5)) end
     end
     if opt.use_noun then
         -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
