@@ -215,11 +215,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local function evaluate()
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
         for t = 1, max_t do clones.lstm[t]:evaluate() end
+        model.linear:evaluate()
     end
 
     local function training()
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:training() end
         for t = 1, max_t do clones.lstm[t]:training() end
+        model.linear:training()
     end
 
     local function feval(params_, update)

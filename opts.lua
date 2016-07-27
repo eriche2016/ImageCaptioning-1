@@ -74,7 +74,7 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', false, 'whether save model file?')
-    cmd:option('-save_file_name', 'cnnrelu.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'cnndrop.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
