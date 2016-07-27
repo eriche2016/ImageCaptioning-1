@@ -30,13 +30,13 @@ function M.parse(arg)
 
     ------------ General options --------------------
     cmd:option('-data', 'data/', 'Path to dataset')
-    -- cmd:option('-train_feat', 'train2014_features_vgg_vd19_conv5', 'Path to pre-extracted training image feature')
-    -- cmd:option('-val_feat', 'val2014_features_vgg_vd19_conv5', 'Path to pre-extracted validation image feature')
-    -- cmd:option('-test_feat', 'test2014_features_vgg_vd19_conv5_2nd', 'Path to pre-extracted test image feature')
+    cmd:option('-train_feat', 'train2014_features_vgg_vd19_conv5', 'Path to pre-extracted training image feature')
+    cmd:option('-val_feat', 'val2014_features_vgg_vd19_conv5', 'Path to pre-extracted validation image feature')
+    cmd:option('-test_feat', 'test2014_features_vgg_vd19_conv5_2nd', 'Path to pre-extracted test image feature')
 
-    cmd:option('-train_feat', 'train2014_vgg_vd16_conv5', 'Path to pre-extracted training image feature')
-    cmd:option('-val_feat', 'val2014_vgg_vd16_conv5', 'Path to pre-extracted validation image feature')
-    cmd:option('-test_feat', 'test2014_vgg_vd16_conv5', 'Path to pre-extracted test image feature')
+    -- cmd:option('-train_feat', 'train2014_vgg_vd16_conv5', 'Path to pre-extracted training image feature')
+    -- cmd:option('-val_feat', 'val2014_vgg_vd16_conv5', 'Path to pre-extracted validation image feature')
+    -- cmd:option('-test_feat', 'test2014_vgg_vd16_conv5', 'Path to pre-extracted test image feature')
 
     -- cmd:option('-train_fc7', 'train2014_features_vgg_vd19_fc7', 'Path to pre-extracted training fully connected 7')
     -- cmd:option('-val_fc7', 'val2014_features_vgg_vd19_fc7', 'Path to pre-extracted validation fully connected 7')
@@ -74,7 +74,7 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'google.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'cnnrelu.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
@@ -87,7 +87,9 @@ function M.parse(arg)
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     cmd:option('-dropout', 0.0)
     cmd:option('-bn', false)
-    cmd:option('-use_google', true)
+    cmd:option('-use_google', false)
+    cmd:option('-cnn_relu', true)
+    cmd:option('-cnn_dropout', false)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
