@@ -73,13 +73,13 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'cnnrelu.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
-    cmd:option('-load_file', false, 'whether load model file?')
-    cmd:option('-load_file_name', 'd0.5.seed13.splitfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file', true, 'whether load model file?')
+    cmd:option('-load_file_name', 'cnnrelu.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
