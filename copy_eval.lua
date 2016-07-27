@@ -56,7 +56,7 @@ function beam_search(model, dataloader, opt)
     end 
     
     local captions = {}
-    MY_BATCH_NUM = 1
+    MY_BATCH_NUM = 2
 
     local i = 1
     if MY_BATCH_NUM == 2 then i = 20000 end
