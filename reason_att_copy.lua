@@ -22,7 +22,7 @@ function M.soft_att_lstm_concat(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
-    local d_att_seq = nn.Dropout(opt.dropout)(att_seq)
+    local d_att_seq = nn.Dropout(0.0)(att_seq)
     local dx = nn.Dropout(opt.dropout)(x)
 
     ------------ Attention part --------------------
@@ -99,7 +99,7 @@ function M.soft_att_lstm_concat_nox(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
-    local d_att_seq = nn.Dropout(opt.dropout)(att_seq)
+    local d_att_seq = nn.Dropout(0.0)(att_seq)
 
     ------------ Attention part --------------------
     local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size

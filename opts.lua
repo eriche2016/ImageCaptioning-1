@@ -73,8 +73,8 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', false, 'whether save model file?')
-    cmd:option('-save_file_name', 'cnndrop.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file_name', 'decdrop.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
@@ -85,7 +85,7 @@ function M.parse(arg)
 
     cmd:option('-train_only', false, 'if true then use 80k, else use 110k')
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
-    cmd:option('-dropout', 0.0)
+    cmd:option('-dropout', 0.5)
     cmd:option('-bn', false)
     cmd:option('-use_google', false)
     cmd:option('-cnn_relu', false)
