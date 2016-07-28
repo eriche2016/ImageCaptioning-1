@@ -73,8 +73,8 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', false, 'whether save model file?')
-    cmd:option('-save_file_name', 'fc7drop.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file_name', 'convdrop.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
@@ -90,6 +90,7 @@ function M.parse(arg)
     cmd:option('-use_google', false)
     cmd:option('-cnn_relu', false)
     cmd:option('-cnn_dropout', false)
+    cmd:option('-conv_dropout', 0.5)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
@@ -98,8 +99,8 @@ function M.parse(arg)
     cmd:option('-beam_size', 3, 'Beam size in beam search') -- 3
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
-    cmd:option('-test_mode', true, 'eval on test set if true')
-    cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
+    cmd:option('-test_mode', false, 'eval on test set if true')
+    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
