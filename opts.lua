@@ -95,7 +95,7 @@ function M.parse(arg)
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
     -- cmd:option('-model', 'copy.google.val.all.8.noun.w10.model', 'Model to evaluate')
     cmd:option('-eval_algo', 'beam', 'Evaluation algorithm, beam or greedy')
-    cmd:option('-beam_size', 3, 'Beam size in beam search')
+    cmd:option('-beam_size', 5, 'Beam size in beam search') -- 3
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
     cmd:option('-test_mode', false, 'eval on test set if true')
