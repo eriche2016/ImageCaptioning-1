@@ -348,6 +348,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
+                evaluate()
                 train_loss, train_loss_2 = comp_error(batches)
                 val_loss, val_loss_2 = comp_error(val_batches)
                 print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
@@ -355,9 +356,9 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             end
 
             if i == 1 or i % opt.eval_period == 0 then
+                evaluate()
                 local captions = {}
                 local j1 = 1
-                evaluate()
                 while j1 <= #dataloader.val_set do
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                     att_seq, fc7_images, fc7_google_images = dataloader:gen_test_data(j1, j2)
