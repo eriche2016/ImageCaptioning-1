@@ -171,6 +171,7 @@ end
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local vgg16_input_fc7_model = torch.load('models/vgg_vd16_input_fc7_cudnn.t7')
+    model_utils.unsanitize_gradients(vgg16_input_fc7_model)
 
     local params, grad_params
     local model_list
@@ -191,6 +192,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for t = 1, opt.reason_step do
         table.insert(model_list, model.soft_att_lstm[t])
     end
+    table.insert(model_list, vgg16_input_fc7_model)
     params, grad_params = model_utils.combine_all_parameters(unpack(model_list))
     local clones = {}
     anno_utils = dataloader.anno_utils
@@ -440,7 +442,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 if bleu_4 > max_bleu_4 then
                     max_bleu_4 = bleu_4
                     if opt.save_file then
-                        vgg16_input_fc7_model:clearState()
+                        model_utils.sanitize_gradients(vgg16_input_fc7_model)
                         torch.save('models/' .. opt.save_file_name .. '.vgg16_input_fc7', vgg16_input_fc7_model)
                         torch.save('models/' .. opt.save_file_name, model)
                     end
