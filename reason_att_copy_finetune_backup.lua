@@ -2,6 +2,7 @@ require 'nn'
 require 'cunn'
 require 'nngraph'
 require 'optim'
+-- require 'cudnn'
 local model_utils = require 'utils.model_utils'
 local eval_utils = require 'eval.neuraltalk2.misc.utils'
 local tablex = require 'pl.tablex'
@@ -22,11 +23,8 @@ function M.soft_att_lstm_concat(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
-    local d_att_seq = nn.Dropout(0.0)(att_seq)
-    local dx = nn.Dropout(opt.dropout)(x)
-
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size
+    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
@@ -50,7 +48,7 @@ function M.soft_att_lstm_concat(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(d_att_seq)     -- batch * feat_size * att_size
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * feat_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
     ------------ End of attention part -----------
@@ -59,7 +57,7 @@ function M.soft_att_lstm_concat(opt)
     local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
-    local i2h = nn.Linear(input_size, 4 * rnn_size)(dx)
+    local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
     local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
     -- test
@@ -99,10 +97,8 @@ function M.soft_att_lstm_concat_nox(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
-    local d_att_seq = nn.Dropout(opt.conv_dropout)(att_seq)
-
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size
+    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
@@ -126,18 +122,16 @@ function M.soft_att_lstm_concat_nox(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(d_att_seq)     -- batch * rnn_size * att_size
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
 
     -------------- End of attention part -----------
-
-    local bn_wh, bn_att, bn_c = nn.Identity(), nn.Identity(), nn.Identity()
     
     --- Input to LSTM
-    local att_add = bn_att(nn.Linear(feat_size, 4 * rnn_size)(att_res))   -- batch * (4*rnn_size) <- batch * feat_size
+    local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
-    local h2h = bn_wh(nn.Linear(rnn_size, 4 * rnn_size)(prev_h))
+    local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
     -- test
     -- local prev_all_input_sums = nn.CAddTable()({i2h, h2h})
@@ -158,7 +152,7 @@ function M.soft_att_lstm_concat_nox(opt)
         nn.CMulTable()({forget_gate, prev_c}),
         nn.CMulTable()({in_gate,     in_transform})
     })
-    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(bn_c(next_c))}) -- batch * rnn_size
+    local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
     
     return nn.gModule({att_seq, prev_c, prev_h}, {next_c, next_h})
 end
@@ -169,7 +163,8 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
-    local vgg16_input_fc7_model = torch.load('models/vgg_vd16_input_fc7_cudnn.t7')
+    local input2conv5 = torch.load('models/' .. opt.load_conv5_name)
+    local conv52fc7 = torch.load('models/' .. opt.load_fc7_name)
 
     local params, grad_params
     local model_list
@@ -187,9 +182,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             model_list = {model.emb, model.lstm, model.softmax}
         end
     end
+    table.insert(model_list, input2conv5)
+    table.insert(model_list, conv52fc7)
+
     for t = 1, opt.reason_step do
         table.insert(model_list, model.soft_att_lstm[t])
     end
+
     params, grad_params = model_utils.combine_all_parameters(unpack(model_list))
     local clones = {}
     anno_utils = dataloader.anno_utils
@@ -200,7 +199,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for name, proto in pairs(model) do
         print('cloning '.. name)
         if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion'
-            and name ~= 'pooling' and name ~= 'linear' and name ~= 'google_linear' then 
+            and name ~= 'pooling' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
@@ -210,41 +209,29 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     if opt.use_noun then
         clones.reason_softmax = model_utils.clone_many_times(model.reason_softmax, opt.reason_step)
         -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
-    end 
-
-    local att_seq, input_text, output_text, noun_list, fc7_google_images, jpg
-
-    local function evaluate()
-        for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
-        for t = 1, max_t do clones.lstm[t]:evaluate() end
-        model.linear:evaluate()
     end
 
-    local function training()
-        for t = 1, opt.reason_step do clones.soft_att_lstm[t]:training() end
-        for t = 1, max_t do clones.lstm[t]:training() end
-        model.linear:training()
-    end
+
+    local jpg, input_text, output_text, noun_list
 
     local function feval(params_, update)
         if update == nil then update = true end
-        if update then training() else evaluate() end
+        if update then conv52fc7:training() else conv52fc7:evaluate() end
         if params_ ~= params then
             params:copy(params_)
         end
         grad_params:zero()
 
-        local fc7_images = vgg16_input_fc7_model:forward(jpg)
+        local conv5 = input2conv5:forward(jpg)
+        local att_seq = torch.CudaTensor(conv5:size(1), opt.att_size, opt.feat_size)
+        att_seq:copy(conv5:reshape(conv5:size(1), opt.feat_size, opt.att_size):transpose(2, 3))
+        local fc7_images = conv52fc7:forward(conv5)
 
         local image_map
         if opt.fc7_size ~= opt.lstm_size then
             image_map = model.linear:forward(fc7_images)
         else
             image_map = fc7_images
-        end
-        local image_google_map
-        if opt.use_google then
-            image_map:add(fc7_google_images)
         end
 
         local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
@@ -295,6 +282,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
             local dembeddings, dlstm_c, dlstm_h, dreason_c, dreason_h = {}, {}, {}, {}, {}
             local dreason_h_att = torch.CudaTensor(input_text:size()[1], opt.reason_step, opt.lstm_size):zero()
+            local d_att_seq = torch.CudaTensor(att_seq:size()):zero()
             dlstm_c[seq_len] = zero_tensor:clone()
             dlstm_h[seq_len] = zero_tensor:clone()
 
@@ -315,16 +303,18 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     dreason_h[t]:add(doutput_t)
                 end
                 dreason_h[t]:add(dreason_h_att:select(2, t))
-                _, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
+                local d_att_seq_t
+                d_att_seq_t, dreason_c[t - 1], dreason_h[t - 1] = unpack(clones.soft_att_lstm[t]:
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
+                d_att_seq:add(d_att_seq_t)
             end
-            local d_fc7_images
-            if opt.fc7_size ~= opt.lstm_size then
-                dreason_c[0]:add(dreason_h[0])
-                d_fc7_images = model.linear:backward(fc7_images, dreason_c[0])
-            end
-            vgg16_input_fc7_model:backward(jpg, d_fc7_images)
+            local d_image_map = dreason_c[0] + dreason_h[0]
+            local d_fc7 = d_image_map
+            if opt.fc7_size ~= opt.lstm_size then d_fc7 = model.linear:backward(fc7_images, d_image_map) end
+            local d_conv5 = conv52fc7:backward(conv5, d_fc7)
+            d_conv5:add(d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14))
+            input2conv5:backward(jpg, d_conv5)
         end
         
         grad_params:clamp(-5, 5)
@@ -337,7 +327,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local loss_2 = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
-            att_seq, fc7_images, input_text, output_text, noun_list, fc7_google_images = dataloader:gen_train_data(batches[j])
+            jpg, input_text, output_text, noun_list = dataloader:gen_train_jpg(batches[j])
             local t_loss, t_loss_2 = feval(params, false)
             loss = loss + t_loss
             loss_2 = loss_2 + t_loss_2
@@ -349,37 +339,39 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for epoch = 1, opt.nEpochs do
         local index = torch.randperm(#batches)
         for i = 1, #batches do
-            att_seq, _, input_text, output_text, noun_list, fc7_google_images, jpg = dataloader:gen_train_data(batches[index[i]])
+            jpg, input_text, output_text, noun_list = dataloader:gen_train_jpg(batches[index[i]])
             optim.adagrad(feval, params, optim_state)
+            -- optim.sgd(feval, params, optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
-                evaluate()
                 train_loss, train_loss_2 = comp_error(batches)
                 val_loss, val_loss_2 = comp_error(val_batches)
                 print(epoch, i, 'train', train_loss, train_loss_2, 'val', val_loss, val_loss_2)
                 collectgarbage()
+                -- print(epoch, i)
+                -- collectgarbage()
             end
 
             if i == 1 or i % opt.eval_period == 0 then
-                evaluate()
                 local captions = {}
                 local j1 = 1
                 while j1 <= #dataloader.val_set do
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
-                    att_seq, _, fc7_google_images, jpg = dataloader:gen_test_data(j1, j2)
+                    jpg = dataloader:gen_test_jpg(j1, j2)
 
-                    local fc7_images = vgg16_input_fc7_model:forward(jpg)
+                    conv52fc7:evaluate()
+
+                    local conv5 = input2conv5:forward(jpg)
+                    local att_seq = torch.CudaTensor(conv5:size(1), opt.att_size, opt.feat_size)
+                    att_seq:copy(conv5:reshape(conv5:size(1), opt.feat_size, opt.att_size):transpose(2, 3))
+                    local fc7_images = conv52fc7:forward(conv5)
 
                     local image_map
                     if opt.lstm_size ~= opt.fc7_size then
                         image_map = model.linear:forward(fc7_images)
                     else
                         image_map = fc7_images
-                    end
-                    local image_google_map
-                    if opt.use_google then
-                        image_map:add(fc7_google_images)
                     end
 
                     local reason_c = {[0] = image_map}
@@ -439,9 +431,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 if bleu_4 > max_bleu_4 then
                     max_bleu_4 = bleu_4
                     if opt.save_file then
-                        vgg16_input_fc7_model:clearState()
-                        torch.save('models/' .. opt.save_file_name .. '.vgg16_input_fc7', vgg16_input_fc7_model)
+                        input2conv5:clearState()
+                        conv52fc7:clearState()
+                        -- model_utils.clean_gradients(input2conv5)
+                        -- model_utils.clean_gradients(conv52fc7)
                         torch.save('models/' .. opt.save_file_name, model)
+                        torch.save('models/' .. opt.save_conv5_name, input2conv5)
+                        torch.save('models/' .. opt.save_fc7_name, conv52fc7)
                     end
                 end
                 if opt.early_stop == 'cider' then
@@ -474,10 +470,7 @@ function M.create_model(opt)
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
     model.criterion = nn.ClassNLLCriterion()
     if opt.fc7_size ~= opt.lstm_size then
-        model.linear = nn.Sequential()
-        if opt.cnn_dropout then model.linear:add(nn.Dropout(0.5)) end
-        model.linear:add(nn.Linear(opt.fc7_size, opt.lstm_size))
-        if opt.cnn_relu then model.linear:add(nn.ReLU(true)) end
+        model.linear = nn.Linear(opt.fc7_size, opt.lstm_size)
     end
     if opt.use_noun then
         -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
