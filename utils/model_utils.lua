@@ -222,4 +222,17 @@ function net_utils.unsanitize_gradients(net)
   end
 end
 
+
+function net_utils.adagrad(x, dx, lr, epsilon, state)
+  if not state.m then
+    state.m = x.new(#x):zero()
+    state.tmp = x.new(#x)
+  end
+  -- calculate new mean squared values
+  state.m:addcmul(1.0, dx, dx)
+  -- perform update
+  state.tmp:sqrt(state.m):add(epsilon)
+  x:addcdiv(-lr, dx, state.tmp)
+end
+
 return model_utils

@@ -170,8 +170,12 @@ end
 -- batches: {{id, caption}, ..., ...}
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
+    local optim_epsilon = 1e-8
+    local optim_state, cnn_optim_state = {}, {}
+
     local vgg16_input_fc7_model = torch.load('models/vgg_vd16_input_fc7_cudnn.t7')
     model_utils.unsanitize_gradients(vgg16_input_fc7_model)
+    cnn_params, cnn_grad_params = vgg16_input_fc7_model:getParameters()
 
     local params, grad_params
     local model_list
@@ -192,7 +196,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     for t = 1, opt.reason_step do
         table.insert(model_list, model.soft_att_lstm[t])
     end
-    table.insert(model_list, vgg16_input_fc7_model)
     params, grad_params = model_utils.combine_all_parameters(unpack(model_list))
     local clones = {}
     anno_utils = dataloader.anno_utils
@@ -229,13 +232,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         model.linear:training()
     end
 
-    local function feval(params_, update)
+    local function feval(update)
         if update == nil then update = true end
         if update then training() else evaluate() end
-        if params_ ~= params then
-            params:copy(params_)
-        end
         grad_params:zero()
+        cnn_grad_params:zero()
 
         local fc7_images = vgg16_input_fc7_model:forward(jpg)
 
@@ -275,7 +276,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         if opt.use_noun then
             reason_pool = model.pooling:forward(reason_pred_mat):float()
             local t_loss = model.reason_criterion:forward(reason_pool, noun_list) * opt.reason_weight
-            if update then loss = loss + t_loss else loss_2 = loss_2 + t_loss end
+            -- if update then loss = loss + t_loss else loss_2 = loss_2 + t_loss end
+            loss_2 = loss_2 + t_loss
         end
 
         lstm_c[0] = reason_c[reason_len]
@@ -328,10 +330,13 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 d_fc7_images = model.linear:backward(fc7_images, dreason_c[0])
             end
             vgg16_input_fc7_model:backward(jpg, d_fc7_images)
+
+            grad_params:clamp(-5, 5)
+            cnn_grad_params:clamp(-5, 5)
         end
-        
-        grad_params:clamp(-5, 5)
-        return loss, update and grad_params or loss_2
+
+        -- return loss, update and grad_params or loss_2
+        return loss, loss_2
     end 
     --- end of feval
 
@@ -341,7 +346,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
             att_seq, fc7_images, input_text, output_text, noun_list, fc7_google_images = dataloader:gen_train_data(batches[j])
-            local t_loss, t_loss_2 = feval(params, false)
+            local t_loss, t_loss_2 = feval(false)
             loss = loss + t_loss
             loss_2 = loss_2 + t_loss_2
         end
@@ -353,7 +358,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local index = torch.randperm(#batches)
         for i = 1, #batches do
             att_seq, _, input_text, output_text, noun_list, fc7_google_images, jpg = dataloader:gen_train_data(batches[index[i]])
-            optim.adagrad(feval, params, optim_state)
+            feval(true)
+            model_utils.adagrad(params, grad_params, opt.LR, optim_epsilon, optim_state)
+            model_utils.adagrad(cnn_params, cnn_grad_params, opt.cnn_LR, optim_epsilon, cnn_optim_state)
+            -- optim.adagrad(feval, params, optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
@@ -442,8 +450,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 if bleu_4 > max_bleu_4 then
                     max_bleu_4 = bleu_4
                     if opt.save_file then
-                        model_utils.sanitize_gradients(vgg16_input_fc7_model)
-                        torch.save('models/' .. opt.save_file_name .. '.vgg16_input_fc7', vgg16_input_fc7_model)
+                        vgg16_input_fc7_model:clearState()
+                        torch.save('models/' .. opt.save_file_name .. '.vgg16_input_fc7_model', vgg16_input_fc7_model)
                         torch.save('models/' .. opt.save_file_name, model)
                     end
                 end
