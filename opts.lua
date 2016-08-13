@@ -70,7 +70,7 @@ function M.parse(arg)
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 0.0, 'Initial learning rate') -- 0.01
-    cmd:option('-cnn_LR', 4e-5, 'Learning rate for cnn')
+    cmd:option('-cnn_LR', 0.0, 'Learning rate for cnn')
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
