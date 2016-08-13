@@ -90,7 +90,7 @@ function M.parse(arg)
     cmd:option('-bn', false)
     cmd:option('-use_google', false)
     cmd:option('-cnn_relu', false)
-    cmd:option('-cnn_dropout', false)
+    cmd:option('-cnn_dropout', true)
     cmd:option('-conv_dropout', 0.0)
     
     ------------ Evaluation options --------------------
