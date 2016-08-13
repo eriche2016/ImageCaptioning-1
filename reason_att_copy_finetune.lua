@@ -173,7 +173,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local optim_epsilon = 1e-8
     local optim_state, cnn_optim_state = {}, {}
 
-    local vgg16_input_fc7_model = torch.load('models/vgg_vd16_input_fc7_cudnn.t7')
+    local vgg16_input_fc7_model
+    if opt.load_file then
+        vgg16_input_fc7_model = torch.load('models/' .. opt.load_file_name .. '.vgg16_input_fc7_model')
+    else
+        vgg16_input_fc7_model = torch.load('models/vgg_vd16_input_fc7_cudnn.t7')
+    end
     if opt.cnn_dropout then vgg16_input_fc7_model.modules[35].p = 0.5 end
     model_utils.unsanitize_gradients(vgg16_input_fc7_model)
     cnn_params, cnn_grad_params = vgg16_input_fc7_model:getParameters()
