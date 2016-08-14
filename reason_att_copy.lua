@@ -233,14 +233,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         grad_params:zero()
 
         local image_map
-        if opt.fc7_size ~= opt.lstm_size then
+        if opt.use_google then
+            image_map = model.linear:forward{fc7_images, fc7_google_images}
+        elseif opt.fc7_size ~= opt.lstm_size then
             image_map = model.linear:forward(fc7_images)
         else
             image_map = fc7_images
-        end
-        local image_google_map
-        if opt.use_google then
-            image_map:add(fc7_google_images)
         end
 
         local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
@@ -315,7 +313,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     backward({att_seq, reason_c[t - 1], reason_h[t - 1]},
                     {dreason_c[t], dreason_h[t]}))
             end
-            if opt.fc7_size ~= opt.lstm_size then
+            if opt.use_google then
+                dreason_c[0]:add(dreason_h[0])
+                model.linear:backward({fc7_images, fc7_google_images}, dreason_c[0])
+            elseif opt.fc7_size ~= opt.lstm_size then
                 dreason_c[0]:add(dreason_h[0])
                 model.linear:backward(fc7_images, dreason_c[0])
             end
@@ -364,14 +365,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     att_seq, fc7_images, fc7_google_images = dataloader:gen_test_data(j1, j2)
 
                     local image_map
-                    if opt.lstm_size ~= opt.fc7_size then
+                    if opt.use_google then
+                        image_map = model.linear:forward{fc7_images, fc7_google_images}
+                    elseif opt.fc7_size ~= opt.lstm_size then
                         image_map = model.linear:forward(fc7_images)
                     else
                         image_map = fc7_images
-                    end
-                    local image_google_map
-                    if opt.use_google then
-                        image_map:add(fc7_google_images)
                     end
 
                     local reason_c = {[0] = image_map}
@@ -463,10 +462,15 @@ function M.create_model(opt)
     model.lstm = M.soft_att_lstm_concat(opt)
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
     model.criterion = nn.ClassNLLCriterion()
-    if opt.fc7_size ~= opt.lstm_size then
+    if opt.fc7_size ~= opt.lstm_size or opt.use_google then
         model.linear = nn.Sequential()
+        if opt.use_google then
+            model.linear:add(nn.JoinTable(2))
+            model.linear:add(nn.Linear(opt.fc7_size + opt.google_fc7_size, opt.lstm_size))
+        else
         -- if opt.cnn_dropout then model.linear:add(nn.Dropout(0.5)) end
-        model.linear:add(nn.Linear(opt.fc7_size, opt.lstm_size))
+            model.linear:add(nn.Linear(opt.fc7_size, opt.lstm_size))
+        end
         if opt.cnn_relu then model.linear:add(nn.ReLU(true)) end
     end
     if opt.use_noun then

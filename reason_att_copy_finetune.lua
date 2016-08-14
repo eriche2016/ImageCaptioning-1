@@ -249,14 +249,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local fc7_images = vgg16_input_fc7_model:forward(jpg)
 
         local image_map
-        if opt.fc7_size ~= opt.lstm_size then
+        if opt.use_google then
+            image_map = model.linear:forward{fc7_images, fc7_google_images}
+        elseif opt.fc7_size ~= opt.lstm_size then
             image_map = model.linear:forward(fc7_images)
         else
             image_map = fc7_images
-        end
-        local image_google_map
-        if opt.use_google then
-            image_map:add(fc7_google_images)
         end
 
         local zero_tensor = torch.zeros(input_text:size()[1], opt.lstm_size):cuda()
@@ -333,7 +331,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     {dreason_c[t], dreason_h[t]}))
             end
             local d_fc7_images
-            if opt.fc7_size ~= opt.lstm_size then
+            if opt.use_google then
+                dreason_c[0]:add(dreason_h[0])
+                d_fc7_images, _ = unpack(model.linear:backward({fc7_images, fc7_google_images}, dreason_c[0]))
+            elseif opt.fc7_size ~= opt.lstm_size then
                 dreason_c[0]:add(dreason_h[0])
                 d_fc7_images = model.linear:backward(fc7_images, dreason_c[0])
             end
@@ -391,14 +392,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     local fc7_images = vgg16_input_fc7_model:forward(jpg)
 
                     local image_map
-                    if opt.lstm_size ~= opt.fc7_size then
+                    if opt.use_google then
+                        image_map = model.linear:forward{fc7_images, fc7_google_images}
+                    elseif opt.fc7_size ~= opt.lstm_size then
                         image_map = model.linear:forward(fc7_images)
                     else
                         image_map = fc7_images
-                    end
-                    local image_google_map
-                    if opt.use_google then
-                        image_map:add(fc7_google_images)
                     end
 
                     local reason_c = {[0] = image_map}
