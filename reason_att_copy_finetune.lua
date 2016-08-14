@@ -368,9 +368,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for i = 1, #batches do
             att_seq, _, input_text, output_text, noun_list, fc7_google_images, jpg = dataloader:gen_train_data(batches[index[i]])
             feval(true)
-            model_utils.adagrad(params, grad_params, opt.LR, optim_epsilon, optim_state)
-            model_utils.adagrad(cnn_params, cnn_grad_params, opt.cnn_LR, optim_epsilon, cnn_optim_state)
-            -- optim.adagrad(feval, params, optim_state)
+            -- model_utils.adagrad(params, grad_params, opt.LR, optim_epsilon, optim_state)
+            -- model_utils.adagrad(cnn_params, cnn_grad_params, opt.cnn_LR, optim_epsilon, cnn_optim_state)
+            model_utils.adam(params, grad_params, opt.LR, 0.9, 0.999, optim_epsilon, optim_state)
+            model_utils.adam(cnn_params, cnn_grad_params, opt.cnn_LR, 0.9, 0.999, optim_epsilon, cnn_optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
@@ -474,54 +475,6 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         -- end of for i
     end
     -- end of for epoch
-end
-
-
--------------------------
--- create the final model
--------------------------
-function M.create_model(opt)
-    local model = {}
-    model.emb = nn.LookupTable(opt.word_cnt, opt.emb_size)
-    -- model.soft_att_lstm = M.soft_att_lstm_concat_nox(opt)
-    model.soft_att_lstm = {}
-    for t = 1, opt.reason_step do
-        model.soft_att_lstm[t] = M.soft_att_lstm_concat_nox(opt)
-    end
-    model.lstm = M.soft_att_lstm_concat(opt)
-    model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
-    model.criterion = nn.ClassNLLCriterion()
-    if opt.fc7_size ~= opt.lstm_size then
-        model.linear = nn.Sequential()
-        -- if opt.cnn_dropout then model.linear:add(nn.Dropout(0.5)) end
-        model.linear:add(nn.Linear(opt.fc7_size, opt.lstm_size))
-        if opt.cnn_relu then model.linear:add(nn.ReLU(true)) end
-    end
-    if opt.use_noun then
-        -- model.reason_softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
-        model.reason_softmax = nn.Linear(opt.lstm_size, opt.word_cnt)
-        model.pooling = nn.Max(2)
-        model.reason_criterion = nn.MultiLabelMarginCriterion()
-    end
-    
-    if opt.nGPU > 0 then
-        model.emb:cuda()
-        for _, m in ipairs(model.soft_att_lstm) do
-            m:cuda()
-        end
-        model.lstm:cuda()
-        model.softmax:cuda()
-        model.criterion:cuda()
-        if opt.fc7_size ~= opt.lstm_size then
-            model.linear:cuda()
-        end
-        if opt.use_noun then
-            model.reason_softmax:cuda()
-            model.pooling:cuda()
-            -- model.reason_criterion:cuda()
-        end
-    end
-    return model
 end
 
 -------------------------
