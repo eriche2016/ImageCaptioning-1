@@ -465,7 +465,7 @@ function M.create_model(opt)
     model.criterion = nn.ClassNLLCriterion()
     if opt.fc7_size ~= opt.lstm_size then
         model.linear = nn.Sequential()
-        if opt.cnn_dropout then model.linear:add(nn.Dropout(0.5)) end
+        -- if opt.cnn_dropout then model.linear:add(nn.Dropout(0.5)) end
         model.linear:add(nn.Linear(opt.fc7_size, opt.lstm_size))
         if opt.cnn_relu then model.linear:add(nn.ReLU(true)) end
     end
