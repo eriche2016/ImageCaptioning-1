@@ -82,7 +82,7 @@ function M.parse(arg)
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
-    cmd:option('-load_file_name', 'w256drop0.1.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'goocat.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
