@@ -90,7 +90,7 @@ function M.parse(arg)
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     cmd:option('-dropout', 0.0)
     cmd:option('-bn', false)
-    cmd:option('-use_google', false)
+    cmd:option('-use_google', true) -- false
     cmd:option('-cnn_relu', false)
     cmd:option('-cnn_dropout', true) -- true
     cmd:option('-conv_dropout', 0.0)
