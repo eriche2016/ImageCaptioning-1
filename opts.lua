@@ -24,6 +24,7 @@ function M.parse(arg)
     cmd:option('-use_noun', true, 'Use noun or not') -- true
     cmd:option('-use_cat', false, 'Use category or not. If true then will disgard words.')
     cmd:option('-reason_weight', 10.0, 'weight of reasoning loss')
+    cmd:option('-gen_weight', 30.0)
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
     cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
@@ -75,12 +76,12 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', false, 'whether save model file?')
-    cmd:option('-save_file_name', 'trunc20.adam.drop35.4e-5finefc7.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file_name', 'norm.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
-    cmd:option('-load_file', true, 'whether load model file?')
+    cmd:option('-load_file', false, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
     cmd:option('-load_file_name', 'goocat.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
@@ -90,7 +91,7 @@ function M.parse(arg)
     cmd:option('-early_stop', 'cider', 'can be cider or bleu')
     cmd:option('-dropout', 0.0)
     cmd:option('-bn', false)
-    cmd:option('-use_google', true) -- false
+    cmd:option('-use_google', false) -- false
     cmd:option('-cnn_relu', false)
     cmd:option('-cnn_dropout', true) -- true
     cmd:option('-conv_dropout', 0.0)

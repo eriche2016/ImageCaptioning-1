@@ -272,13 +272,15 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         lstm_c[0] = reason_c[reason_len]
         lstm_h[0] = reason_h[reason_len]
 
+        local gen_loss = 0
         for t = 1, seq_len do
             embeddings[t] = clones.emb[t]:forward(input_text:select(2, t))
             lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
                 forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])
-            loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))
+            gen_loss = gen_loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))
         end
+        loss = loss + gen_loss / seq_len * opt.gen_weight
 
         if update then
             local dreason_pred
@@ -461,7 +463,7 @@ function M.create_model(opt)
     end
     model.lstm = M.soft_att_lstm_concat(opt)
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
-    model.criterion = nn.ClassNLLCriterion()
+    model.criterion = nn.ClassNLLCriterion(sizeAverage = false)
     if opt.fc7_size ~= opt.lstm_size or opt.use_google then
         model.linear = nn.Sequential()
         if opt.use_google then
