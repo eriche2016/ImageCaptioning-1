@@ -22,11 +22,8 @@ function M.soft_att_lstm_concat(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
-    local d_att_seq = nn.Dropout(0.0)(att_seq)
-    local dx = nn.Dropout(opt.dropout)(x)
-
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size
+    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
@@ -50,7 +47,7 @@ function M.soft_att_lstm_concat(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(d_att_seq)     -- batch * feat_size * att_size
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * feat_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * feat_size <- (batch * att_size, batch * feat_size * att_size)
 
     ------------ End of attention part -----------
@@ -59,7 +56,7 @@ function M.soft_att_lstm_concat(opt)
     local att_add = nn.Linear(feat_size, 4 * rnn_size)(att_res)   -- batch * (4*rnn_size) <- batch * feat_size
 
     ------------- LSTM main part --------------------
-    local i2h = nn.Linear(input_size, 4 * rnn_size)(dx)
+    local i2h = nn.Linear(input_size, 4 * rnn_size)(x)
     local h2h = nn.Linear(rnn_size, 4 * rnn_size)(prev_h)
     
     -- test
@@ -82,6 +79,8 @@ function M.soft_att_lstm_concat(opt)
         nn.CMulTable()({in_gate,     in_transform})
     })
     local next_h = nn.CMulTable()({out_gate, nn.Tanh()(next_c)}) -- batch * rnn_size
+
+    next_h = nn.Dropout(opt.gen_dropout)(next_h)
     
     return nn.gModule({x, att_seq, prev_c, prev_h}, {next_c, next_h})
 end
@@ -99,10 +98,8 @@ function M.soft_att_lstm_concat_nox(opt)
     local prev_c = nn.Identity()()
     local prev_h = nn.Identity()()
 
-    local d_att_seq = nn.Dropout(opt.conv_dropout)(att_seq)
-
     ------------ Attention part --------------------
-    local att = nn.View(-1, feat_size)(d_att_seq)         -- (batch * att_size) * feat_size
+    local att = nn.View(-1, feat_size)(att_seq)         -- (batch * att_size) * feat_size
     local att_h, dot
 
     if att_hid_size > 0 then
@@ -126,7 +123,7 @@ function M.soft_att_lstm_concat_nox(opt)
 
     local weight = nn.SoftMax()(dot)
         
-    local att_seq_t = nn.Transpose({2, 3})(d_att_seq)     -- batch * rnn_size * att_size
+    local att_seq_t = nn.Transpose({2, 3})(att_seq)     -- batch * rnn_size * att_size
     local att_res = nn.MixtureTable(3){weight, att_seq_t}      -- batch * rnn_size <- (batch * att_size, batch * rnn_size * att_size)
 
     -------------- End of attention part -----------
@@ -159,6 +156,8 @@ function M.soft_att_lstm_concat_nox(opt)
         nn.CMulTable()({in_gate,     in_transform})
     })
     local next_h = nn.CMulTable()({out_gate, nn.Tanh()(bn_c(next_c))}) -- batch * rnn_size
+
+    next_h = nn.Dropout(opt.reason_dropout)(next_h)
     
     return nn.gModule({att_seq, prev_c, prev_h}, {next_c, next_h})
 end
