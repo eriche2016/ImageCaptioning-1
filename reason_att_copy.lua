@@ -463,7 +463,7 @@ function M.create_model(opt)
     end
     model.lstm = M.soft_att_lstm_concat(opt)
     model.softmax = nn.Sequential():add(nn.Linear(opt.lstm_size, opt.word_cnt)):add(nn.LogSoftMax())
-    model.criterion = nn.ClassNLLCriterion(sizeAverage = false)
+    model.criterion = nn.ClassNLLCriterion()
     if opt.fc7_size ~= opt.lstm_size or opt.use_google then
         model.linear = nn.Sequential()
         if opt.use_google then
