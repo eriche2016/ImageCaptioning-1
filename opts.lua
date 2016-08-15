@@ -73,7 +73,7 @@ function M.parse(arg)
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 0.0, 'Initial learning rate') -- 0.01, 4e-5 for finetune
     cmd:option('-cnn_LR', 0.0, 'Learning rate for cnn') -- 4e-5 for finetune
-    cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
+    cmd:option('-truncate', 20, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', false, 'whether save model file?')
@@ -83,7 +83,7 @@ function M.parse(arg)
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', true)
-    cmd:option('-load_file_name', 'adam.drop35.4e-5finefc7.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'trunc20.adam.drop35.4e-5finefc7.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
