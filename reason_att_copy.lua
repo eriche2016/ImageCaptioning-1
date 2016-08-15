@@ -277,7 +277,11 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             lstm_c[t], lstm_h[t] = unpack(clones.lstm[t]:
                 forward{embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]})
             predictions[t] = clones.softmax[t]:forward(lstm_h[t])
-            loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t)) / seq_len * opt.gen_weight
+            if opt.normalize then
+                loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t)) / seq_len * opt.gen_weight
+            else
+                loss = loss + clones.criterion[t]:forward(predictions[t], output_text:select(2, t))
+            end
         end
 
         if update then
@@ -293,7 +297,12 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             dlstm_h[seq_len] = zero_tensor:clone()
 
             for t = seq_len, 1, -1 do
-                local doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t)) / seq_len * opt.gen_weight
+                local doutput_t
+                if opt.normalize then
+                    doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t)) / seq_len * opt.gen_weight
+                else
+                    doutput_t = clones.criterion[t]:backward(predictions[t], output_text:select(2, t))
+                end
                 dlstm_h[t]:add(clones.softmax[t]:backward(lstm_h[t], doutput_t))
                 dembeddings[t], doutput_t, dlstm_c[t - 1], dlstm_h[t - 1] = unpack(clones.lstm[t]:
                     backward({embeddings[t], reason_h_att, lstm_c[t - 1], lstm_h[t - 1]},
