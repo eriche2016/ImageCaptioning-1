@@ -213,10 +213,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for i = 1, #batches do
             att_seq, _, input_text, output_text, noun_list, fc7_google_images, jpg = dataloader:gen_train_data(batches[index[i]])
             feval(true)
-            -- model_utils.adagrad(params, grad_params, opt.LR, optim_epsilon, optim_state)
-            -- model_utils.adagrad(cnn_params, cnn_grad_params, opt.cnn_LR, optim_epsilon, cnn_optim_state)
-            model_utils.adam(params, grad_params, opt.LR, 0.8, 0.999, optim_epsilon, optim_state)
-            model_utils.adam(cnn_params, cnn_grad_params, opt.cnn_LR, 0.8, 0.999, optim_epsilon, cnn_optim_state)
+            model_utils.adagrad(params, grad_params, opt.LR, optim_epsilon, optim_state)
+            model_utils.adagrad(cnn_params, cnn_grad_params, opt.cnn_LR, optim_epsilon, cnn_optim_state)
+            -- model_utils.adam(params, grad_params, opt.LR, 0.8, 0.999, optim_epsilon, optim_state)
+            -- model_utils.adam(cnn_params, cnn_grad_params, opt.cnn_LR, 0.8, 0.999, optim_epsilon, cnn_optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
