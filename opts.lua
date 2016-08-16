@@ -8,7 +8,7 @@ function M.parse(arg)
     cmd:text('Options:')
 
     ------------ Model options ----------------------
-    cmd:option('-emb_size', 100, 'Word embedding size') -- 100
+    cmd:option('-emb_size', 300, 'Word embedding size') -- 100
     cmd:option('-lstm_size', 1024, 'LSTM size') -- 1024
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
@@ -73,11 +73,11 @@ function M.parse(arg)
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
     cmd:option('-LR', 1e-2, 'Initial learning rate') -- 0.01, 4e-5 for finetune
     cmd:option('-cnn_LR', 0.0, 'Learning rate for cnn') -- 4e-5 for finetune
-    cmd:option('-truncate', 40, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
+    cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'trunc40.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'wdim300.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
