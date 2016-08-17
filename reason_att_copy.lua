@@ -494,7 +494,7 @@ function M.create_model(opt)
         local weight = model.emb.weight
         for line in io.open('glove/glove.6B.100d.txt'):lines() do
             local inputs = anno_utils.mysplit(line)
-            local word_index = opt.word2index[inputs[0]]
+            local word_index = opt.word2index[inputs[1]]
             if word_index ~= nil then
                 hit_cnt = hit_cnt + 1
                 local cur_weight = torch.Tensor(opt.emb_size)
