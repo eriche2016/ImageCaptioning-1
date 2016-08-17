@@ -492,7 +492,7 @@ function M.create_model(opt)
     if opt.load_glove then
         local hit_cnt = 0
         local weight = model.emb.weight
-        for line in io.open('glove/glove.6B.100d.txt') do
+        for line in io.open('glove/glove.6B.100d.txt'):lines() do
             local inputs = anno_utils.mysplit(line)
             local word_index = opt.word2index[inputs[0]]
             if word_index ~= nil then
