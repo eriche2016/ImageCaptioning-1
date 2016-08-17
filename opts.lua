@@ -77,7 +77,7 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'r_drop0.2.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'gen_drop0.2.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
@@ -94,8 +94,8 @@ function M.parse(arg)
     cmd:option('-cnn_relu', false)
     cmd:option('-cnn_dropout', true) -- true
     cmd:option('-normalize', false) -- false
-    cmd:option('-reason_dropout', 0.2)
-    cmd:option('-gen_dropout', 0.0)
+    cmd:option('-reason_dropout', 0.0)
+    cmd:option('-gen_dropout', 0.2)
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
