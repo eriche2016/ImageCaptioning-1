@@ -27,7 +27,7 @@ function M.parse(arg)
     cmd:option('-gen_weight', 6.0) -- 30
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy_finetune', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -71,19 +71,19 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 4e-5, 'Initial learning rate') -- 0.01, 4e-5 for finetune
-    cmd:option('-cnn_LR', 4e-5, 'Learning rate for cnn') -- 4e-5 for finetune
+    cmd:option('-LR', 0.0, 'Initial learning rate') -- 0.01, 4e-5 for finetune
+    cmd:option('-cnn_LR', 0.0, 'Learning rate for cnn') -- 4e-5 for finetune
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'finetune.second.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
-    cmd:option('-load_file_name', 'conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'gen_drop0.1.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
