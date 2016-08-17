@@ -5,6 +5,7 @@ require 'optim'
 local model_utils = require 'utils.model_utils'
 local eval_utils = require 'eval.neuraltalk2.misc.utils'
 local tablex = require 'pl.tablex'
+local anno_utils = require 'utils.anno_utils_filter'
 
 local M = {}
 
@@ -486,6 +487,21 @@ function M.create_model(opt)
         model.reason_softmax = nn.Linear(opt.lstm_size, opt.word_cnt)
         model.pooling = nn.Max(2)
         model.reason_criterion = nn.MultiLabelMarginCriterion()
+    end
+
+    if opt.load_glove then
+        weight = model.emb.weight
+        for line in io.open('glove/glove.6B.100d.txt') do
+            inputs = anno_utils.mysplit(line)
+            word_index = opt.word2index[inputs[0]]
+            if word_index ~= nil then
+                cur_weight = torch.Tensor(opt.emb_size)
+                for i = 2, opt.emb_size + 1 do
+                    cur_weight[i - 1] = tonumber(inputs[i])
+                end
+                weight[word_index] = cur_weight
+            end
+        end
     end
     
     if opt.nGPU > 0 then

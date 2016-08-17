@@ -39,6 +39,7 @@ function DataLoader:__init(opt)
     self.id2fc7_file, _, _ = anno_utils.read_dataset(self.fc7_dirs, '.dat')
     self.id2fc7_google, _, _ = anno_utils.read_dataset(self.google_fc7_dirs, '.dat')
     self.id2captions, self.word2index, self.index2word, self.word_cnt = anno_utils.read_captions(self.anno_dirs, nil)
+    opt.word2index = self.word2index
     if opt.use_cat then
         self.id2cats, self.cat_cnt = anno_utils.read_cats(self.cat_dir)
         opt.cat_cnt = self.cat_cnt
