@@ -8,7 +8,7 @@ function M.parse(arg)
     cmd:text('Options:')
 
     ------------ Model options ----------------------
-    cmd:option('-emb_size', 300, 'Word embedding size') -- 100
+    cmd:option('-emb_size', 100, 'Word embedding size') -- 100
     cmd:option('-lstm_size', 1024, 'LSTM size') -- 1024
     cmd:option('-att_size', 196, 'how many attention areas')
     cmd:option('-feat_size', 512, 'the dimension of each attention area')
@@ -83,7 +83,7 @@ function M.parse(arg)
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
-    cmd:option('-load_file_name', 'trunc40.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'wdim300.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
