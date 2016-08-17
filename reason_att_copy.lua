@@ -490,18 +490,21 @@ function M.create_model(opt)
     end
 
     if opt.load_glove then
-        weight = model.emb.weight
+        local hit_cnt = 0
+        local weight = model.emb.weight
         for line in io.open('glove/glove.6B.100d.txt') do
-            inputs = anno_utils.mysplit(line)
-            word_index = opt.word2index[inputs[0]]
+            local inputs = anno_utils.mysplit(line)
+            local word_index = opt.word2index[inputs[0]]
             if word_index ~= nil then
-                cur_weight = torch.Tensor(opt.emb_size)
+                hit_cnt = hit_cnt + 1
+                local cur_weight = torch.Tensor(opt.emb_size)
                 for i = 2, opt.emb_size + 1 do
                     cur_weight[i - 1] = tonumber(inputs[i])
                 end
                 weight[word_index] = cur_weight
             end
         end
+        print('hit_cnt', hit_cnt)
     end
     
     if opt.nGPU > 0 then
