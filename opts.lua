@@ -27,7 +27,7 @@ function M.parse(arg)
     cmd:option('-gen_weight', 6.0) -- 30
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'reason_att_copy_finetune', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -71,7 +71,7 @@ function M.parse(arg)
     -- cmd:option('-loss_period', 2400, 'Every given number of iterations, compute the loss on train and test')
     cmd:option('-batch_size', 32, 'Batch size in SGD')
     cmd:option('-val_batch_size', 10, 'Batch size for testing')
-    cmd:option('-LR', 1e-7, 'Initial learning rate') -- 0.01, 4e-5 for finetune
+    cmd:option('-LR', 0.0, 'Initial learning rate') -- 0.01, 4e-5 for finetune
     cmd:option('-cnn_LR', 1e-6, 'Learning rate for cnn') -- 4e-5 for finetune
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
