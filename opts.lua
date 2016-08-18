@@ -83,7 +83,7 @@ function M.parse(arg)
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
-    cmd:option('-load_file_name', 'glove.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'r_drop0.2.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
@@ -96,7 +96,7 @@ function M.parse(arg)
     cmd:option('-normalize', false) -- false
     cmd:option('-reason_dropout', 0.0)
     cmd:option('-gen_dropout', 0.0)
-    cmd:option('-load_glove', true) -- false
+    cmd:option('-load_glove', false) -- false
     
     ------------ Evaluation options --------------------
     -- cmd:option('-model', 'copy.all.val.8.w10.noun.model', 'Model to evaluate')
