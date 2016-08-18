@@ -215,7 +215,9 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             feval(true)
             -- model_utils.adagrad(params, grad_params, opt.LR, optim_epsilon, optim_state)
             -- model_utils.adagrad(cnn_params, cnn_grad_params, opt.cnn_LR, optim_epsilon, cnn_optim_state)
-            model_utils.adam(params, grad_params, opt.LR, 0.8, 0.999, optim_epsilon, optim_state)
+            if opt.LR > 0 then
+                model_utils.adam(params, grad_params, opt.LR, 0.8, 0.999, optim_epsilon, optim_state)
+            end
             model_utils.adam(cnn_params, cnn_grad_params, opt.cnn_LR, 0.8, 0.999, optim_epsilon, cnn_optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
