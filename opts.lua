@@ -77,11 +77,11 @@ function M.parse(arg)
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
     cmd:option('-save_file', true, 'whether save model file?')
-    cmd:option('-save_file_name', 'fine1e-61e-6.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
+    cmd:option('-save_file_name', 'offdev.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
-    cmd:option('-load_file', true, 'whether load model file?')
+    cmd:option('-load_file', false, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
     cmd:option('-load_file_name', 'conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
@@ -106,7 +106,7 @@ function M.parse(arg)
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
     cmd:option('-test_mode', false, 'eval on test set if true')
-    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
+    cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
