@@ -27,7 +27,7 @@ function M.parse(arg)
     cmd:option('-gen_weight', 6.0) -- 30
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy_finetune', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -76,7 +76,7 @@ function M.parse(arg)
     cmd:option('-truncate', 30, 'Text longer than this size gets truncated. -1 for no truncation.') -- 30
     cmd:option('-max_eval_batch', 50, 'max number of instances when calling comp error. 20000 = 4000 * 5')
 
-    cmd:option('-save_file', true, 'whether save model file?')
+    cmd:option('-save_file', false, 'whether save model file?')
     cmd:option('-save_file_name', 'finefc7.offdev.conv519.seed13.backfixed.reason.copy.vgg16.model', 'file name for saving model')
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
@@ -105,7 +105,7 @@ function M.parse(arg)
     cmd:option('-beam_size', 3, 'Beam size in beam search') -- 3
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
-    cmd:option('-test_mode', false, 'eval on test set if true')
+    cmd:option('-test_mode', true, 'eval on test set if true')
     cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
