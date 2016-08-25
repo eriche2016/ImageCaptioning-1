@@ -16,21 +16,21 @@ local M = {}
 -------------------------------------
 function M.train(model, opt, batches, val_batches, optim_state, dataloader)
     local optim_epsilon = 1e-8
-    local optim_state, cnn_optim_state, conv5_optim_state = {}, {}, {}
+    local optim_state, conv5_optim_state, fc7_optim_state = {}, {}, {}
 
-    local vgg16_input_fc7_model, vgg19_input_conv5_model
+    local vgg16_input_conv5_model, vgg16_conv5_fc7_model
     if opt.load_vgg_file then
-        vgg16_input_fc7_model = torch.load('models/' .. opt.load_file_name .. '.vgg16_input_fc7_model')
-        vgg19_input_conv5_model = torch.load('models' .. opt.load_file_name .. '.vgg19_input_conv5_model')
+        vgg16_input_conv5_model = torch.load('models/' .. opt.load_file_name .. '.vgg16_input_conv5_model')
+        vgg16_conv5_fc7_model = torch.load('models' .. opt.load_file_name .. '.vgg16_conv5_fc7_model')
     else
-        vgg16_input_fc7_model = torch.load('models/vgg_vd16_input_fc7_cudnn.t7')
-        vgg19_input_conv5_model = torch.load('models/vgg_vd19_conv5.t7')
+        vgg16_input_conv5_model = torch.load('models/vgg_vd16_input_conv5_cudnn.t7')
+        vgg16_conv5_fc7_model = torch.load('models/vgg_vd16_conv5_fc7_cudnn.t7')
     end
-    if opt.cnn_dropout then vgg16_input_fc7_model.modules[35].p = 0.5 end
-    model_utils.unsanitize_gradients(vgg16_input_fc7_model)
-    model_utils.unsanitize_gradients(vgg19_input_conv5_model)
-    cnn_params, cnn_grad_params = vgg16_input_fc7_model:getParameters()
-    conv5_params, conv5_grad_params = vgg19_input_conv5_model:getParameters()
+    if opt.cnn_dropout then vgg16_conv5_fc7_model.modules[5].p = 0.5 end
+    model_utils.unsanitize_gradients(vgg16_input_conv5_model)
+    model_utils.unsanitize_gradients(vgg16_conv5_fc7_model)
+    conv5_params, conv5_grad_params = vgg16_input_conv5_model:getParameters()
+    fc7_params, fc7_grad_params = vgg16_conv5_fc7_model:getParameters()
 
     local params, grad_params
     local model_list
@@ -79,25 +79,25 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
         for t = 1, max_t do clones.lstm[t]:evaluate() end
         model.linear:evaluate()
-        vgg16_input_fc7_model:evaluate()
+        vgg16_conv5_fc7_model:evaluate()
     end
 
     local function training()
         for t = 1, opt.reason_step do clones.soft_att_lstm[t]:training() end
         for t = 1, max_t do clones.lstm[t]:training() end
         model.linear:training()
-        vgg16_input_fc7_model:training()
+        vgg16_conv5_fc7_model:training()
     end
 
     local function feval(update)
         if update == nil then update = true end
         if update then training() else evaluate() end
         grad_params:zero()
-        cnn_grad_params:zero()
         conv5_grad_params:zero()
+        fc7_grad_params:zero()
 
-        local fc7_images = vgg16_input_fc7_model:forward(jpg)
-        local conv5_images = vgg19_input_conv5_model:forward(jpg)
+        local conv5_images = vgg16_input_conv5_model:forward(jpg)
+        local fc7_images = vgg16_conv5_fc7_model:forward(conv5_images)
         att_seq:copy(conv5_images:reshape(conv5_images:size(1), opt.feat_size, opt.att_size):transpose(2, 3))
 
         local image_map
@@ -172,7 +172,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             end
             dreason_c[reason_len] = dlstm_c[0]
             dreason_h[reason_len] = dlstm_h[0]
-            d_att_seq = torch.CudaTensor(att_seq:size(1), att_seq:size(2), att_seq:size(3)):zero()
+            local d_att_seq = torch.CudaTensor(att_seq:size(1), att_seq:size(2), att_seq:size(3)):zero()
             for t = reason_len, 1, -1 do
                 if opt.use_noun then
                     local doutput_t = clones.reason_softmax[t]:backward(reason_h[t], dreason_pred:select(2, t))
@@ -192,13 +192,14 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 dreason_c[0]:add(dreason_h[0])
                 d_fc7_images = model.linear:backward(fc7_images, dreason_c[0])
             end
-            vgg16_input_fc7_model:backward(jpg, d_fc7_images)
-            local d_conv5_images = d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14)
-            vgg19_input_conv5_model:backward(jpg, d_conv5_images)
+            local d_conv5_images = vgg16_conv5_fc7_model:backward(conv5_images, d_fc7_images)
+            d_att_seq = d_att_seq:transpose(2, 3):reshape(d_att_seq:size(1), opt.feat_size, 14, 14)
+            d_conv5_images:add(d_att_seq)
+            vgg16_input_conv5_model:backward(jpg, d_conv5_images)
 
             grad_params:clamp(-5, 5)
-            cnn_grad_params:clamp(-5, 5)
             conv5_grad_params:clamp(-5, 5)
+            fc7_grad_params:clamp(-5, 5)
         end
 
         -- return loss, update and grad_params or loss_2
@@ -230,7 +231,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
             if opt.LR > 0 then
                 model_utils.adam(params, grad_params, opt.LR, 0.8, 0.999, optim_epsilon, optim_state)
             end
-            model_utils.adam(cnn_params, cnn_grad_params, opt.cnn_LR, 0.8, 0.999, optim_epsilon, cnn_optim_state)
+            model_utils.adam(conv5_params, conv5_grad_params, opt.cnn_LR, 0.8, 0.999, optim_epsilon, conv5_optim_state)
+            model_utils.adam(fc7_params, fc7_grad_params, opt.cnn_LR, 0.8, 0.999, optim_epsilon, fc7_optim_state)
             
             ----------------- Evaluate the model in validation set ----------------
             if i == 1 or i % opt.loss_period == 0 then
@@ -249,8 +251,8 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                     local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
                     att_seq, _, fc7_google_images, jpg = dataloader:gen_test_data(j1, j2)
 
-                    local fc7_images = vgg16_input_fc7_model:forward(jpg)
-                    local conv5_images = vgg19_input_conv5_model:forward(jpg)
+                    local conv5_images = vgg16_input_conv5_model:forward(jpg)
+                    local fc7_images = vgg16_conv5_fc7_model:forward(conv5_images)
                     att_seq:copy(conv5_images:reshape(conv5_images:size(1), opt.feat_size, opt.att_size):transpose(2, 3))
 
                     local image_map
@@ -319,10 +321,10 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
                 if bleu_4 > max_bleu_4 then
                     max_bleu_4 = bleu_4
                     if opt.save_file then
-                        vgg16_input_fc7_model:clearState()
-                        vgg19_input_conv5_model:clearState()
-                        torch.save('models/' .. opt.save_file_name .. '.vgg16_input_fc7_model', vgg16_input_fc7_model)
-                        torch.save('models/' .. opt.save_file_name .. '.vgg19_input_conv5_model', vgg19_input_conv5_model)
+                        vgg16_input_conv5_model:clearState()
+                        vgg16_conv5_fc7_model:clearState()
+                        torch.save('models/' .. opt.save_file_name .. '.vgg16_input_conv5_model', vgg16_input_conv5_model)
+                        torch.save('models/' .. opt.save_file_name .. '.vgg16_conv5_fc7_model', vgg16_conv5_fc7_model)
                         torch.save('models/' .. opt.save_file_name, model)
                     end
                 end
