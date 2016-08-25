@@ -83,7 +83,7 @@ function M.parse(arg)
 
     cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', true)
-    cmd:option('-load_file_name', 'finefc7.offdev.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_file_name', 'fine01e-6.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
@@ -105,8 +105,8 @@ function M.parse(arg)
     cmd:option('-beam_size', 3, 'Beam size in beam search') -- 3
     cmd:option('-val_max_len', 20, 'Max length in validation state')
 
-    cmd:option('-test_mode', true, 'eval on test set if true') --
-    cmd:option('-server_train_mode', false, 'eval on test of val, and use the rest for training')
+    cmd:option('-test_mode', false, 'eval on test set if true') --
+    cmd:option('-server_train_mode', true, 'eval on test of val, and use the rest for training')
     cmd:option('-server_test_mode', false, 'eval on server test set if true; if true then test_mode will be false.')
     
     local opt = cmd:parse(arg or {})
