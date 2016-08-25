@@ -253,7 +253,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
 
                     local conv5_images = vgg16_input_conv5_model:forward(jpg)
                     local fc7_images = vgg16_conv5_fc7_model:forward(conv5_images)
-                    att_seq:copy(conv5_images:reshape(conv5_images:size(1), self.feat_size, self.att_size):transpose(2, 3))
+                    att_seq:copy(conv5_images:reshape(conv5_images:size(1), opt.feat_size, opt.att_size):transpose(2, 3))
 
                     local image_map
                     if opt.use_google then
