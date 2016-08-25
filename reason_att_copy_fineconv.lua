@@ -199,7 +199,7 @@ function M.train(model, opt, batches, val_batches, optim_state, dataloader)
         local loss_2 = 0
         for j = 1, opt.max_eval_batch do
             if j > #batches then break end
-            att_seq, _, input_text, output_text, noun_list, fc7_google_images, jpg = dataloader:gen_train_data(batches[j])
+            att_seq, fc7_images, input_text, output_text, noun_list, fc7_google_images, jpg = dataloader:gen_train_data(batches[j])
             local t_loss, t_loss_2 = feval(false)
             loss = loss + t_loss
             loss_2 = loss_2 + t_loss_2
