@@ -81,7 +81,7 @@ function M.parse(arg)
     cmd:option('-save_conv5_name', '12000.1e-5.fine.conv5.model')
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
-    cmd:option('-load_file', false, 'whether load model file?')
+    cmd:option('-load_file', true, 'whether load model file?')
     cmd:option('-load_vgg_file', false)
     cmd:option('-load_file_name', 'fienconv01e-6.offdev.conv519.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
