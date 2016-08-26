@@ -27,7 +27,7 @@ function M.parse(arg)
     cmd:option('-gen_weight', 6.0) -- 30
 
     -- cmd:option('-use_reasoning', true, 'Use reasoning. Will use attention in default.')
-    cmd:option('-model_pack', 'reason_att_copy_finetune', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
+    cmd:option('-model_pack', 'reason_att_copy', 'the model package to use, can be reason_att, reasoning, or soft_att_lstm')
     cmd:option('-reason_step', 8, 'Reasoning steps before the decoder')
 
     ------------ General options --------------------
@@ -82,8 +82,8 @@ function M.parse(arg)
     cmd:option('-save_fc7_name', '12000.1e-5.fine.fc7.model')
 
     cmd:option('-load_file', true, 'whether load model file?')
-    cmd:option('-load_vgg_file', true)
-    cmd:option('-load_file_name', 'finefc7.offdev.conv519.seed13.backfixed.reason.copy.vgg16.model')
+    cmd:option('-load_vgg_file', false)
+    cmd:option('-load_file_name', 'offdev.seed13.backfixed.reason.copy.vgg16.model')
     cmd:option('-load_conv5_name', 'vgg_input_conv5_cunn.t7')
     cmd:option('-load_fc7_name', 'vgg_conv5_fc7_cunn.t7')
 
