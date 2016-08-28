@@ -39,11 +39,12 @@ function beam_search(model, dataloader, opt)
     local beam_size = opt.beam_size
     local word_cnt = opt.word_cnt
     local index2word = dataloader.index2word
-    
+
+    print('actual clone times ' .. max_t)
     for name, proto in pairs(model) do
         print('cloning '.. name)
         if name ~= 'soft_att_lstm' and name ~= 'reason_softmax' and name ~= 'reason_criterion'
-            and name ~= 'pooling' then 
+            and name ~= 'pooling' and name ~= 'linear' and name ~= 'google_linear' then 
             clones[name] = model_utils.clone_many_times(proto, max_t)
         end
     end
@@ -53,23 +54,42 @@ function beam_search(model, dataloader, opt)
     if opt.use_noun then
         clones.reason_softmax = model_utils.clone_many_times(model.reason_softmax, opt.reason_step)
         -- clones.reason_criterion = model_utils.clone_many_times(model.reason_criterion, opt.reason_step)
-    end 
-    
-    local captions = {}
-    MY_BATCH_NUM = 0 -- 0
-
-    local i = 1
-    if MY_BATCH_NUM == 2 then i = 20000 end
-    if opt.server_test_mode then
-        fout = io.open('server_test/vgg16.' .. MY_BATCH_NUM .. '.txt', 'w')
     end
-    local limit = #dataloader.val_set
-    if MY_BATCH_NUM == 1 then limit = 19999 end
-    while i <= limit do
+
+    local function evaluate()
+        for t = 1, opt.reason_step do clones.soft_att_lstm[t]:evaluate() end
+        for t = 1, max_t do clones.lstm[t]:evaluate() end
+        model.linear:evaluate()
+    end
+
+    local START, END = 1, #dataloader.val_set
+    local BATCH_MODE, BATCH_NUM, MY_BATCH_NUM = false, 2, 1
+    local fout
+    local captions = {}
+    evaluate()
+
+    if BATCH_MODE then
+        local filename = 'eval/' .. opt.model .. '.txt'
+        if opt.server_test_mode then
+            filename = 'server_test/' .. opt.model .. '.txt'
+        end
+        fout = io.open(filename, 'w')
+        local batch_size = #dataloader.val_set / BATCH_NUM
+        START = 1 + batch_size * (MY_BATCH_NUM - 1)
+        END = batch_size * MY_BATCH_NUM
+        if BATCH_NUM == MY_BATCH_NUM then
+            END = #dataloader.val_set
+        end
+    end
+
+    for i = START, END do
         collectgarbage()
-        local att_seq, fc7_images = dataloader:gen_test_data(i, i)
+        local att_seq, fc7_images, fc7_google_images = dataloader:gen_test_data(i, i)
+
         local image_map
-        if opt.lstm_size ~= opt.fc7_size then
+        if opt.use_google then
+            image_map = model.linear:forward{fc7_images, fc7_google_images}
+        elseif opt.fc7_size ~= opt.lstm_size then
             image_map = model.linear:forward(fc7_images)
         else
             image_map = fc7_images
@@ -207,12 +227,12 @@ function beam_search(model, dataloader, opt)
                 caption = index2word[sentence[t]]
             end
         end
-                  
-        if i <= 10 or (i >= 20000 and i <= 20009) then
+
+        if i % 100 == 0 then
             print(dataloader.val_set[i], caption)
         end
 
-        if opt.server_test_mode then
+        if BATCH_MODE then
             fout:write(dataloader.val_set[i] .. '\t' .. caption .. '\n')
         else
             table.insert(captions, {image_id = dataloader.val_set[i], caption = caption})
@@ -221,105 +241,12 @@ function beam_search(model, dataloader, opt)
         -- Next image
         i = i + 1
     end
-    if opt.server_test_mode then
+    if BATCH_MODE then
         fout:close()
+    else
+        eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_' .. opt.model)
     end
-    -- Evaluate it
-    -- local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_concat.1024.512.model')
-    -- if opt.server_test_mode then
-    --     eval_utils.write_json('server_test/test_' .. opt.model .. '.json', captions)
-    -- else
-    local eval_struct = M.language_eval(captions, 'beam_' .. beam_size .. '_' .. opt.model)
-    -- end
 end
 
--- beam_search(model, dataloader, opt)
--- os.exit()
-
----------------- Greedy Search -------------------
-function greedy_search(model, dataloader, opt) 
-    --local max_t = opt.truncate > 0 and math.min(opt.max_seq_len, opt.truncate) or opt.max_seq_len
-    local max_t = opt.val_max_len
-    
-    print('actual clone times ' .. max_t)
-    local clones = {}
-    local anno_utils = dataloader.anno_utils
-    
-    for name, proto in pairs(model) do
-        print('cloning '.. name)
-        if name ~= 'linear' then 
-            clones[name] = model_utils.clone_many_times(proto, max_t)
-        end
-    end
-    
-    local captions = {}
-    local j1 = 1
-    while j1 <= #dataloader.val_set do
-        local j2 = math.min(#dataloader.val_set, j1 + opt.val_batch_size)
-        att_seq, fc7_images = dataloader:gen_test_data(j1, j2)
-
-        local image_map
-        if opt.lstm_size ~= opt.fc7_size then
-            image_map = model.linear:forward(fc7_images)
-        else
-            image_map = fc7_images
-        end
-
-        local initstate_c = image_map:clone()
-        local initstate_h = image_map
-        local init_input = torch.CudaTensor(att_seq:size()[1]):fill(anno_utils.START_NUM)
-                    
-        ------------------- Forward pass -------------------
-        local embeddings = {}              -- input text embeddings
-        local lstm_c = {[0]=initstate_c}   -- internal cell states of LSTM
-        local lstm_h = {[0]=initstate_h}   -- output values of LSTM
-        local predictions = {}             -- softmax outputs
-        local max_pred = {[1] = init_input}          -- max outputs 
-        local seq_len = max_t     -- sequence length 
-                    
-        for t = 1, seq_len do
-            embeddings[t] = clones.emb[t]:forward(max_pred[t])    -- emb forward
-            if opt.use_attention then
-                lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:            -- lstm forward
-                    forward{embeddings[t], att_seq, lstm_c[t-1], lstm_h[t-1]})
-            else
-                lstm_c[t], lstm_h[t] = unpack(clones.soft_att_lstm[t]:
-                    forward{embeddings[t], lstm_c[t - 1], lstm_h[t - 1]})
-            end    
-                predictions[t] = clones.softmax[t]:forward(lstm_h[t])             -- softmax forward
-                _, max_pred[t + 1] = torch.max(predictions[t], 2)
-                max_pred[t + 1] = max_pred[t + 1]:view(-1)
-        end
-
-        ------------------- Get captions -------------------
-        index2word = dataloader.index2word
-        for k = 1, att_seq:size()[1] do
-            local caption = ''
-            for t = 2, seq_len do
-                local word_index = max_pred[t][k]
-                if word_index == anno_utils.STOP_NUM then break end
-                if caption ~= '' then
-                    caption = caption .. ' ' .. index2word[word_index]
-                else
-                    caption = index2word[word_index]
-                end
-            end
-            if j1 + k - 1 <= 20 then
-                print(dataloader.val_set[j1 + k - 1], caption)
-            end
-            table.insert(captions, {image_id = dataloader.val_set[j1 + k - 1], caption = caption})
-        end
-        j1 = j2 + 1
-    end
-    
-    -- Evaluate it
-    local eval_struct = M.language_eval(captions, 'greedy_concat.1024.512.model')
-end
-
-
-if opt.eval_algo == 'beam' then
-    beam_search(model, dataloader, opt)
-else
-    greedy_search(model, dataloader, opt)
-end
+beam_search(model, dataloader, opt)
 
