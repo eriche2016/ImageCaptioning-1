@@ -225,7 +225,7 @@ function beam_search(model, dataloader, opt)
             end
         end
 
-        if i % 100 == 0 then
+        if i % 100 == 0 or i == 1 then
             print(dataloader.val_set[i], caption)
         end
 
