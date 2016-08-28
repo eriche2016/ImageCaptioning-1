@@ -59,7 +59,8 @@ function beam_search(model, dataloader, opt)
         model.linear:evaluate()
     end
 
-    local START, END = 1, #dataloader.val_set
+    -- local START, END = 1, #dataloader.val_set
+    local START, END = 1, 30
     local BATCH_MODE, BATCH_NUM, MY_BATCH_NUM = false, 2, 1
     local fout
     local captions = {}
