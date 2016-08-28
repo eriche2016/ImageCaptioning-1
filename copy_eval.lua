@@ -31,9 +31,6 @@ end
 function beam_search(model, dataloader, opt)
     -- local max_t = opt.truncate > 0 and math.min(opt.max_seq_len, opt.truncate) or opt.max_seq_len
     local max_t = opt.val_max_len
-    print('Max sequence length is: ' .. max_t)
-    
-    print('actual clone times ' .. max_t)
     local clones = {}
     local anno_utils = dataloader.anno_utils
     local beam_size = opt.beam_size
