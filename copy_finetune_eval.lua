@@ -19,7 +19,7 @@ local dataloader = DataLoader(opt)
 
 -- Load model
 local model = torch.load('models/' .. opt.model)
-local vgg16_input_fc7_model = torch.load('models/' .. opts.model .. '.vgg16_input_fc7_model')
+local vgg16_input_fc7_model = torch.load('models/' .. opt.model .. '.vgg16_input_fc7_model')
 
 if opt.cnn_dropout then vgg16_input_fc7_model.modules[35].p = 0.5 end
 model_utils.unsanitize_gradients(vgg16_input_fc7_model)
